@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Monitoramento de Horas - MEI</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Monitoramento de Horas Trabalhadas</h1>
+            <p class="subtitle">Controle suas horas e calcule seus recebimentos</p>
+        </header>
+
+        <div class="config-section">
+            <h2>Configurações</h2>
+            <div class="form-group">
+                <label for="valorHora">Valor por Hora (R$):</label>
+                <input type="number" id="valorHora" placeholder="Ex: 50.00" step="0.01" min="0">
+                <button id="salvarValor" class="btn btn-primary">Salvar Valor</button>
+            </div>
+            <div class="valor-atual">
+                <p>Valor atual: <strong id="valorAtualDisplay">R$ 0,00</strong></p>
+            </div>
+        </div>
+
+        <div class="registro-section">
+            <h2>Registrar Horas Trabalhadas</h2>
+            <div class="form-registro">
+                <div class="form-group">
+                    <label for="dataTrabalho">Data:</label>
+                    <input type="date" id="dataTrabalho" required>
+                </div>
+                <div class="form-group">
+                    <label for="horasTrabalho">Horas Trabalhadas:</label>
+                    <input type="number" id="horasTrabalho" placeholder="Ex: 8" step="0.5" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="descricao">Descrição (opcional):</label>
+                    <input type="text" id="descricao" placeholder="Ex: Desenvolvimento de sistema">
+                </div>
+                <div class="form-group">
+                    <label for="cliente">Cliente (opcional):</label>
+                    <input type="text" id="cliente" placeholder="Ex: Empresa XYZ">
+                </div>
+                <button id="adicionarRegistro" class="btn btn-success">Adicionar Registro</button>
+            </div>
+        </div>
+
+        <div class="resumo-section">
+            <h2>Resumo Financeiro</h2>
+            <div class="cards-resumo">
+                <div class="card">
+                    <h3>Total de Horas</h3>
+                    <p class="valor-grande" id="totalHoras">0h</p>
+                </div>
+                <div class="card">
+                    <h3>Previsão de Recebimento</h3>
+                    <p class="valor-grande destaque" id="previsaoRecebimento">R$ 0,00</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="filtros-section">
+            <h2>Filtros</h2>
+            <div class="filtros-container">
+                <div class="form-group">
+                    <label for="filtroDataInicio">Data Início:</label>
+                    <input type="date" id="filtroDataInicio">
+                </div>
+                <div class="form-group">
+                    <label for="filtroDataFim">Data Fim:</label>
+                    <input type="date" id="filtroDataFim">
+                </div>
+                <div class="form-group">
+                    <label for="filtroCliente">Cliente:</label>
+                    <input type="text" id="filtroCliente" placeholder="Filtrar por cliente">
+                </div>
+                <button id="aplicarFiltros" class="btn btn-secondary">Aplicar Filtros</button>
+                <button id="limparFiltros" class="btn btn-secondary">Limpar Filtros</button>
+            </div>
+        </div>
+
+        <div class="backup-section">
+            <h2>Backup dos Dados</h2>
+            <div class="acoes-registros">
+                <button id="exportarJSON" class="btn btn-primary">Exportar Backup (JSON)</button>
+                <button id="importarJSON" class="btn btn-primary">Importar Backup (JSON)</button>
+                <input type="file" id="inputArquivo" accept=".json" style="display: none;">
+            </div>
+            <p style="color: #666; margin-top: 10px; font-size: 0.9em;">Use o backup em JSON para salvar e carregar seus dados no pendrive</p>
+        </div>
+
+        <div class="registros-section">
+            <h2>Registros</h2>
+            <div class="acoes-registros">
+                <button id="gerarRelatorio" class="btn btn-info">Gerar Relatório</button>
+                <button id="exportarDados" class="btn btn-info">Exportar para CSV</button>
+            </div>
+            <div class="tabela-container">
+                <table id="tabelaRegistros">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Horas</th>
+                            <th>Valor</th>
+                            <th>Cliente</th>
+                            <th>Descrição</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpoTabela">
+                        <tr class="empty-state">
+                            <td colspan="6">Nenhum registro encontrado. Adicione seu primeiro registro acima.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="modalRelatorio" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Relatório de Horas Trabalhadas</h2>
+                <div id="conteudoRelatorio"></div>
+                <button id="imprimirRelatorio" class="btn btn-primary">Imprimir Relatório</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
