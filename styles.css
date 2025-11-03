@@ -61,20 +61,27 @@ label {
 
 input[type="text"],
 input[type="number"],
-input[type="date"] {
+input[type="date"],
+select.select-prestador {
     width: 100%;
     padding: 12px;
     border: 2px solid #e0e0e0;
     border-radius: 8px;
     font-size: 1em;
     transition: border-color 0.3s;
+    background-color: white;
 }
 
 input[type="text"]:focus,
 input[type="number"]:focus,
-input[type="date"]:focus {
+input[type="date"]:focus,
+select.select-prestador:focus {
     outline: none;
     border-color: #3b82f6;
+}
+
+select.select-prestador {
+    cursor: pointer;
 }
 
 .btn {

@@ -1,18 +1,24 @@
 // Sistema de Monitoramento de Horas - MEI
 class SistemaMonitoramento {
     constructor() {
-        this.valorHora = 0;
+        this.valoresPorHora = {
+            'Emerson': 0,
+            'Felipe': 0
+        };
+        this.prestadorAtual = 'Emerson';
         this.registros = [];
         this.filtros = {
             dataInicio: null,
             dataFim: null,
-            cliente: null
+            cliente: null,
+            prestador: null
         };
         this.inicializar();
     }
 
     inicializar() {
         this.carregarDados();
+        this.migrarDadosAntigos();
         this.configurarEventos();
         this.atualizarInterface();
         this.definirDataAtual();
@@ -24,6 +30,12 @@ class SistemaMonitoramento {
     }
 
     configurarEventos() {
+        // Mudar prestador na configuração
+        document.getElementById('prestadorConfig').addEventListener('change', (e) => {
+            this.prestadorAtual = e.target.value;
+            this.atualizarInterface();
+        });
+
         // Salvar valor da hora
         document.getElementById('salvarValor').addEventListener('click', () => {
             this.salvarValorHora();
@@ -93,43 +105,51 @@ class SistemaMonitoramento {
 
     salvarValorHora() {
         const valor = parseFloat(document.getElementById('valorHora').value);
+        const prestador = this.prestadorAtual;
 
         if (isNaN(valor) || valor < 0) {
             alert('Por favor, insira um valor válido.');
             return;
         }
 
+        // Contar registros do prestador atual
+        const registrosDoPrestador = this.registros.filter(r => r.prestador === prestador);
+
         // Se já existem registros, perguntar se quer recalcular
-        if (this.registros.length > 0 && this.valorHora !== valor) {
+        if (registrosDoPrestador.length > 0 && this.valoresPorHora[prestador] !== valor) {
             const confirmar = confirm(
-                `Você possui ${this.registros.length} registro(s) salvos.\n\n` +
-                `Deseja recalcular TODOS os registros com o novo valor de R$ ${valor.toFixed(2)}?\n\n` +
-                `Valor atual: R$ ${this.valorHora.toFixed(2)}\n` +
+                `Você possui ${registrosDoPrestador.length} registro(s) de ${prestador}.\n\n` +
+                `Deseja recalcular os registros de ${prestador} com o novo valor de R$ ${valor.toFixed(2)}?\n\n` +
+                `Valor atual: R$ ${this.valoresPorHora[prestador].toFixed(2)}\n` +
                 `Novo valor: R$ ${valor.toFixed(2)}\n\n` +
                 `Clique em OK para recalcular ou Cancelar para apenas alterar o valor (novos registros usarão o novo valor).`
             );
 
             if (confirmar) {
-                this.recalcularTodosRegistros(valor);
+                this.recalcularRegistrosPrestador(prestador, valor);
             }
         }
 
-        this.valorHora = valor;
+        this.valoresPorHora[prestador] = valor;
         this.salvarDados();
         this.atualizarInterface();
 
         document.getElementById('valorHora').value = '';
-        alert('Valor por hora salvo com sucesso!');
+        alert(`Valor por hora de ${prestador} salvo com sucesso!`);
     }
 
-    recalcularTodosRegistros(novoValorHora) {
+    recalcularRegistrosPrestador(prestador, novoValorHora) {
         this.registros.forEach(registro => {
-            registro.valor = registro.horas * novoValorHora;
+            if (registro.prestador === prestador) {
+                registro.valor = registro.horas * novoValorHora;
+            }
         });
-        alert(`${this.registros.length} registro(s) recalculado(s) com sucesso!`);
+        const quantidade = this.registros.filter(r => r.prestador === prestador).length;
+        alert(`${quantidade} registro(s) de ${prestador} recalculado(s) com sucesso!`);
     }
 
     adicionarRegistro() {
+        const prestador = document.getElementById('prestadorRegistro').value;
         const data = document.getElementById('dataTrabalho').value;
         const horas = parseFloat(document.getElementById('horasTrabalho').value);
         const descricao = document.getElementById('descricao').value;
@@ -140,13 +160,20 @@ class SistemaMonitoramento {
             return;
         }
 
+        const valorHoraPrestador = this.valoresPorHora[prestador] || 0;
+
+        if (valorHoraPrestador === 0) {
+            alert(`Atenção: Configure o valor por hora de ${prestador} antes de adicionar registros.`);
+        }
+
         const registro = {
             id: Date.now(),
+            prestador: prestador,
             data: data,
             horas: horas,
             descricao: descricao,
             cliente: cliente,
-            valor: horas * this.valorHora
+            valor: horas * valorHoraPrestador
         };
 
         this.registros.push(registro);
@@ -173,6 +200,7 @@ class SistemaMonitoramento {
     }
 
     aplicarFiltros() {
+        this.filtros.prestador = document.getElementById('filtroPrestador').value;
         this.filtros.dataInicio = document.getElementById('filtroDataInicio').value;
         this.filtros.dataFim = document.getElementById('filtroDataFim').value;
         this.filtros.cliente = document.getElementById('filtroCliente').value.toLowerCase();
@@ -184,9 +212,11 @@ class SistemaMonitoramento {
         this.filtros = {
             dataInicio: null,
             dataFim: null,
-            cliente: null
+            cliente: null,
+            prestador: null
         };
 
+        document.getElementById('filtroPrestador').value = '';
         document.getElementById('filtroDataInicio').value = '';
         document.getElementById('filtroDataFim').value = '';
         document.getElementById('filtroCliente').value = '';
@@ -197,6 +227,11 @@ class SistemaMonitoramento {
     obterRegistrosFiltrados() {
         return this.registros.filter(registro => {
             let passa = true;
+
+            // Filtro de prestador
+            if (this.filtros.prestador && registro.prestador !== this.filtros.prestador) {
+                passa = false;
+            }
 
             // Filtro de data início
             if (this.filtros.dataInicio && registro.data < this.filtros.dataInicio) {
@@ -224,8 +259,9 @@ class SistemaMonitoramento {
     }
 
     atualizarValorHora() {
+        document.getElementById('prestadorAtualDisplay').textContent = this.prestadorAtual;
         document.getElementById('valorAtualDisplay').textContent =
-            this.formatarMoeda(this.valorHora);
+            this.formatarMoeda(this.valoresPorHora[this.prestadorAtual]);
     }
 
     atualizarTabela() {
@@ -238,7 +274,7 @@ class SistemaMonitoramento {
         if (registrosFiltrados.length === 0) {
             tbody.innerHTML = `
                 <tr class="empty-state">
-                    <td colspan="6">Nenhum registro encontrado.</td>
+                    <td colspan="7">Nenhum registro encontrado.</td>
                 </tr>
             `;
             return;
@@ -246,6 +282,7 @@ class SistemaMonitoramento {
 
         tbody.innerHTML = registrosFiltrados.map(registro => `
             <tr>
+                <td><strong>${registro.prestador || 'Emerson'}</strong></td>
                 <td>${this.formatarData(registro.data)}</td>
                 <td>${registro.horas}h</td>
                 <td>${this.formatarMoeda(registro.valor)}</td>
@@ -350,16 +387,16 @@ class SistemaMonitoramento {
         // Ordenar por data
         registrosFiltrados.sort((a, b) => new Date(a.data) - new Date(b.data));
 
-        let csv = 'Data,Horas,Valor,Cliente,Descrição\n';
+        let csv = 'Prestador,Data,Horas,Valor,Cliente,Descrição\n';
 
         registrosFiltrados.forEach(registro => {
-            csv += `${registro.data},${registro.horas},${registro.valor.toFixed(2)},"${registro.cliente}","${registro.descricao}"\n`;
+            csv += `${registro.prestador || 'Emerson'},${registro.data},${registro.horas},${registro.valor.toFixed(2)},"${registro.cliente}","${registro.descricao}"\n`;
         });
 
         // Adicionar totais
         const totalHoras = registrosFiltrados.reduce((sum, r) => sum + r.horas, 0);
         const totalValor = registrosFiltrados.reduce((sum, r) => sum + r.valor, 0);
-        csv += `\nTOTAL,${totalHoras.toFixed(1)},${totalValor.toFixed(2)},,`;
+        csv += `\nTOTAL,,${totalHoras.toFixed(1)},${totalValor.toFixed(2)},,`;
 
         // Download
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -377,10 +414,11 @@ class SistemaMonitoramento {
 
     exportarJSON() {
         const dados = {
-            valorHora: this.valorHora,
+            valoresPorHora: this.valoresPorHora,
             registros: this.registros,
+            prestadorAtual: this.prestadorAtual,
             dataExportacao: new Date().toISOString(),
-            versao: '1.0'
+            versao: '2.0'
         };
 
         const json = JSON.stringify(dados, null, 2);
@@ -418,25 +456,44 @@ class SistemaMonitoramento {
                 const dados = JSON.parse(e.target.result);
 
                 // Validar estrutura do arquivo
-                if (!dados.valorHora && dados.valorHora !== 0) {
-                    throw new Error('Arquivo JSON inválido: falta valorHora');
-                }
                 if (!Array.isArray(dados.registros)) {
                     throw new Error('Arquivo JSON inválido: registros deve ser um array');
                 }
 
+                // Suportar formato antigo (v1.0) e novo (v2.0)
+                let valoresHora = {};
+                if (dados.valoresPorHora) {
+                    // Novo formato v2.0
+                    valoresHora = dados.valoresPorHora;
+                } else if (dados.valorHora !== undefined) {
+                    // Formato antigo v1.0 - migrar para Emerson
+                    valoresHora = { 'Emerson': dados.valorHora, 'Felipe': 0 };
+                }
+
                 // Confirmar com o usuário
+                const versao = dados.versao || '1.0';
+                const emersonValor = valoresHora['Emerson'] || 0;
+                const felipeValor = valoresHora['Felipe'] || 0;
+
                 const confirmar = confirm(
                     `Deseja importar este backup?\n\n` +
-                    `Valor por hora: R$ ${dados.valorHora.toFixed(2)}\n` +
+                    `Versão: ${versao}\n` +
+                    `Valor/hora Emerson: R$ ${emersonValor.toFixed(2)}\n` +
+                    `Valor/hora Felipe: R$ ${felipeValor.toFixed(2)}\n` +
                     `Total de registros: ${dados.registros.length}\n` +
                     `Data da exportação: ${dados.dataExportacao ? new Date(dados.dataExportacao).toLocaleString('pt-BR') : 'Desconhecida'}\n\n` +
                     `ATENÇÃO: Isso irá substituir todos os dados atuais!`
                 );
 
                 if (confirmar) {
-                    this.valorHora = dados.valorHora;
+                    this.valoresPorHora = valoresHora;
                     this.registros = dados.registros;
+
+                    if (dados.prestadorAtual) {
+                        this.prestadorAtual = dados.prestadorAtual;
+                    }
+
+                    this.migrarDadosAntigos();
                     this.salvarDados();
                     this.atualizarInterface();
                     alert('Backup importado com sucesso!');
@@ -469,10 +526,38 @@ class SistemaMonitoramento {
         return `${dia}/${mes}/${ano}`;
     }
 
+    migrarDadosAntigos() {
+        // Migrar dados antigos para o novo formato com prestadores
+        let migrados = false;
+
+        this.registros.forEach(registro => {
+            if (!registro.prestador) {
+                registro.prestador = 'Emerson';
+                migrados = true;
+            }
+        });
+
+        // Se tinha valor antigo, migrar para Emerson
+        const dados = localStorage.getItem('sistemaMonitoramentoMEI');
+        if (dados) {
+            const parsed = JSON.parse(dados);
+            if (parsed.valorHora !== undefined && this.valoresPorHora['Emerson'] === 0) {
+                this.valoresPorHora['Emerson'] = parsed.valorHora;
+                migrados = true;
+            }
+        }
+
+        if (migrados) {
+            this.salvarDados();
+            console.log('Dados migrados para o novo formato com prestadores');
+        }
+    }
+
     salvarDados() {
         const dados = {
-            valorHora: this.valorHora,
-            registros: this.registros
+            valoresPorHora: this.valoresPorHora,
+            registros: this.registros,
+            prestadorAtual: this.prestadorAtual
         };
         localStorage.setItem('sistemaMonitoramentoMEI', JSON.stringify(dados));
     }
@@ -481,7 +566,16 @@ class SistemaMonitoramento {
         const dados = localStorage.getItem('sistemaMonitoramentoMEI');
         if (dados) {
             const parsed = JSON.parse(dados);
-            this.valorHora = parsed.valorHora || 0;
+
+            // Novo formato
+            if (parsed.valoresPorHora) {
+                this.valoresPorHora = parsed.valoresPorHora;
+            }
+
+            if (parsed.prestadorAtual) {
+                this.prestadorAtual = parsed.prestadorAtual;
+            }
+
             this.registros = parsed.registros || [];
         }
     }
