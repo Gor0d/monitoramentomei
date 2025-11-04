@@ -62,7 +62,8 @@ label {
 input[type="text"],
 input[type="number"],
 input[type="date"],
-select.select-prestador {
+select.select-prestador,
+textarea {
     width: 100%;
     padding: 12px;
     border: 2px solid #e0e0e0;
@@ -70,18 +71,25 @@ select.select-prestador {
     font-size: 1em;
     transition: border-color 0.3s;
     background-color: white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 input[type="text"]:focus,
 input[type="number"]:focus,
 input[type="date"]:focus,
-select.select-prestador:focus {
+select.select-prestador:focus,
+textarea:focus {
     outline: none;
     border-color: #3b82f6;
 }
 
 select.select-prestador {
     cursor: pointer;
+}
+
+textarea {
+    resize: vertical;
+    min-height: 100px;
 }
 
 .btn {

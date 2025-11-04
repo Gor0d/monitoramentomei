@@ -199,6 +199,36 @@ class SistemaMonitoramento {
         }
     }
 
+    verDescricaoCompleta(id) {
+        const registro = this.registros.find(r => r.id === id);
+        if (!registro) return;
+
+        const modal = document.getElementById('modalRelatorio');
+        const conteudo = document.getElementById('conteudoRelatorio');
+
+        conteudo.innerHTML = `
+            <div style="background: #f7fafc; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                <h3 style="margin-bottom: 15px; color: #3b82f6;">Detalhes do Registro</h3>
+                <p><strong>Prestador:</strong> ${registro.prestador || 'Emerson'}</p>
+                <p><strong>Data:</strong> ${this.formatarData(registro.data)}</p>
+                <p><strong>Horas:</strong> ${registro.horas}h</p>
+                <p><strong>Valor:</strong> ${this.formatarMoeda(registro.valor)}</p>
+                <p><strong>Cliente:</strong> ${registro.cliente || '-'}</p>
+            </div>
+            <div style="background: white; padding: 20px; border: 2px solid #3b82f6; border-radius: 10px;">
+                <h3 style="margin-bottom: 15px; color: #3b82f6;">Descrição dos Serviços Prestados</h3>
+                <div style="white-space: pre-wrap; line-height: 1.6; color: #333;">
+                    ${registro.descricao || 'Sem descrição'}
+                </div>
+            </div>
+        `;
+
+        // Esconder botão de imprimir relatório
+        document.getElementById('imprimirRelatorio').style.display = 'none';
+
+        modal.style.display = 'block';
+    }
+
     aplicarFiltros() {
         this.filtros.prestador = document.getElementById('filtroPrestador').value;
         this.filtros.dataInicio = document.getElementById('filtroDataInicio').value;
@@ -280,21 +310,36 @@ class SistemaMonitoramento {
             return;
         }
 
-        tbody.innerHTML = registrosFiltrados.map(registro => `
+        tbody.innerHTML = registrosFiltrados.map(registro => {
+            const descricaoResumo = registro.descricao
+                ? (registro.descricao.length > 50
+                    ? registro.descricao.substring(0, 50) + '...'
+                    : registro.descricao)
+                : '-';
+
+            const temDescricao = registro.descricao && registro.descricao.length > 0;
+
+            return `
             <tr>
                 <td><strong>${registro.prestador || 'Emerson'}</strong></td>
                 <td>${this.formatarData(registro.data)}</td>
                 <td>${registro.horas}h</td>
                 <td>${this.formatarMoeda(registro.valor)}</td>
                 <td>${registro.cliente || '-'}</td>
-                <td>${registro.descricao || '-'}</td>
+                <td style="max-width: 300px;">
+                    <div style="white-space: pre-wrap; word-break: break-word;">${descricaoResumo}</div>
+                    ${temDescricao && registro.descricao.length > 50
+                        ? `<button class="btn btn-secondary" style="margin-top: 5px; padding: 5px 10px; font-size: 0.85em;" onclick="sistema.verDescricaoCompleta(${registro.id})">Ver completo</button>`
+                        : ''}
+                </td>
                 <td>
                     <button class="btn btn-danger" onclick="sistema.excluirRegistro(${registro.id})">
                         Excluir
                     </button>
                 </td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
     }
 
     atualizarResumo() {
@@ -357,9 +402,20 @@ class SistemaMonitoramento {
         registrosFiltrados.forEach(registro => {
             html += `
                 <div class="relatorio-item">
-                    <strong>${this.formatarData(registro.data)}</strong> - ${registro.horas}h - ${this.formatarMoeda(registro.valor)}
-                    ${registro.cliente ? `<br>Cliente: ${registro.cliente}` : ''}
-                    ${registro.descricao ? `<br>Descrição: ${registro.descricao}` : ''}
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <div>
+                            <strong>${this.formatarData(registro.data)}</strong> -
+                            <strong style="color: #3b82f6;">${registro.prestador || 'Emerson'}</strong> -
+                            ${registro.horas}h - ${this.formatarMoeda(registro.valor)}
+                        </div>
+                    </div>
+                    ${registro.cliente ? `<p style="margin: 5px 0;"><strong>Cliente:</strong> ${registro.cliente}</p>` : ''}
+                    ${registro.descricao ? `
+                        <div style="margin-top: 10px; padding: 10px; background: white; border-radius: 5px; border-left: 3px solid #3b82f6;">
+                            <strong style="color: #3b82f6;">Serviços Prestados:</strong>
+                            <div style="white-space: pre-wrap; margin-top: 8px; line-height: 1.5;">${registro.descricao}</div>
+                        </div>
+                    ` : ''}
                 </div>
             `;
         });
@@ -373,6 +429,10 @@ class SistemaMonitoramento {
         `;
 
         document.getElementById('conteudoRelatorio').innerHTML = html;
+
+        // Mostrar botão de imprimir relatório
+        document.getElementById('imprimirRelatorio').style.display = 'inline-block';
+
         document.getElementById('modalRelatorio').style.display = 'block';
     }
 
