@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Monitoramento de Horas - MEI</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -65,14 +66,70 @@
 
         <div class="resumo-section">
             <h2>Resumo Financeiro</h2>
+
+            <!-- Cards por Prestador -->
+            <div class="prestadores-resumo">
+                <div class="prestador-card">
+                    <h3>📊 Emerson</h3>
+                    <div class="prestador-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Horas:</span>
+                            <span class="stat-valor" id="horasEmerson">0h</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Valor:</span>
+                            <span class="stat-valor destaque" id="valorEmerson">R$ 0,00</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="prestador-card">
+                    <h3>📊 Felipe</h3>
+                    <div class="prestador-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Horas:</span>
+                            <span class="stat-valor" id="horasFelipe">0h</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Valor:</span>
+                            <span class="stat-valor destaque" id="valorFelipe">R$ 0,00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Geral -->
             <div class="cards-resumo">
-                <div class="card">
-                    <h3>Total de Horas</h3>
+                <div class="card card-total">
+                    <h3>Total de Horas (Geral)</h3>
                     <p class="valor-grande" id="totalHoras">0h</p>
                 </div>
-                <div class="card">
-                    <h3>Previsão de Recebimento</h3>
+                <div class="card card-total">
+                    <h3>Previsão Total de Recebimento</h3>
                     <p class="valor-grande destaque" id="previsaoRecebimento">R$ 0,00</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard de Gráficos -->
+        <div class="dashboard-section">
+            <h2>Dashboard - Análise de Horas</h2>
+
+            <div class="graficos-container">
+                <div class="grafico-box">
+                    <h3>Horas por Dia (Últimos 30 dias)</h3>
+                    <canvas id="graficoHorasDia"></canvas>
+                </div>
+
+                <div class="grafico-box">
+                    <h3>Comparação entre Prestadores</h3>
+                    <canvas id="graficoComparacao"></canvas>
+                </div>
+            </div>
+
+            <div class="graficos-container">
+                <div class="grafico-box grafico-wide">
+                    <h3>Evolução Mensal de Recebimentos</h3>
+                    <canvas id="graficoEvolucao"></canvas>
                 </div>
             </div>
         </div>

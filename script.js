@@ -345,11 +345,29 @@ class SistemaMonitoramento {
     atualizarResumo() {
         const registrosFiltrados = this.obterRegistrosFiltrados();
 
+        // Totais gerais
         const totalHoras = registrosFiltrados.reduce((sum, r) => sum + r.horas, 0);
         const totalValor = registrosFiltrados.reduce((sum, r) => sum + r.valor, 0);
 
         document.getElementById('totalHoras').textContent = `${totalHoras.toFixed(1)}h`;
         document.getElementById('previsaoRecebimento').textContent = this.formatarMoeda(totalValor);
+
+        // Por prestador
+        const registrosEmerson = registrosFiltrados.filter(r => r.prestador === 'Emerson');
+        const horasEmerson = registrosEmerson.reduce((sum, r) => sum + r.horas, 0);
+        const valorEmerson = registrosEmerson.reduce((sum, r) => sum + r.valor, 0);
+
+        const registrosFelipe = registrosFiltrados.filter(r => r.prestador === 'Felipe');
+        const horasFelipe = registrosFelipe.reduce((sum, r) => sum + r.horas, 0);
+        const valorFelipe = registrosFelipe.reduce((sum, r) => sum + r.valor, 0);
+
+        document.getElementById('horasEmerson').textContent = `${horasEmerson.toFixed(1)}h`;
+        document.getElementById('valorEmerson').textContent = this.formatarMoeda(valorEmerson);
+        document.getElementById('horasFelipe').textContent = `${horasFelipe.toFixed(1)}h`;
+        document.getElementById('valorFelipe').textContent = this.formatarMoeda(valorFelipe);
+
+        // Atualizar gráficos
+        this.atualizarGraficos();
     }
 
     gerarRelatorio() {
@@ -584,6 +602,237 @@ class SistemaMonitoramento {
     formatarData(data) {
         const [ano, mes, dia] = data.split('-');
         return `${dia}/${mes}/${ano}`;
+    }
+
+    atualizarGraficos() {
+        this.criarGraficoHorasDia();
+        this.criarGraficoComparacao();
+        this.criarGraficoEvolucao();
+    }
+
+    criarGraficoHorasDia() {
+        const registrosFiltrados = this.obterRegistrosFiltrados();
+
+        // Obter últimos 30 dias
+        const hoje = new Date();
+        const ultimos30Dias = [];
+        for (let i = 29; i >= 0; i--) {
+            const data = new Date(hoje);
+            data.setDate(data.getDate() - i);
+            ultimos30Dias.push(data.toISOString().split('T')[0]);
+        }
+
+        // Agrupar horas por dia e prestador
+        const horasPorDia = {};
+        ultimos30Dias.forEach(data => {
+            horasPorDia[data] = { Emerson: 0, Felipe: 0 };
+        });
+
+        registrosFiltrados.forEach(registro => {
+            if (horasPorDia[registro.data]) {
+                const prestador = registro.prestador || 'Emerson';
+                horasPorDia[registro.data][prestador] += registro.horas;
+            }
+        });
+
+        const labels = ultimos30Dias.map(data => {
+            const d = new Date(data + 'T00:00:00');
+            return `${d.getDate()}/${d.getMonth() + 1}`;
+        });
+
+        const datasetsEmerson = ultimos30Dias.map(data => horasPorDia[data].Emerson);
+        const datasetsFelipe = ultimos30Dias.map(data => horasPorDia[data].Felipe);
+
+        // Destruir gráfico anterior se existir
+        if (this.graficoHorasDia) {
+            this.graficoHorasDia.destroy();
+        }
+
+        const ctx = document.getElementById('graficoHorasDia');
+        this.graficoHorasDia = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Emerson',
+                        data: datasetsEmerson,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Felipe',
+                        data: datasetsFelipe,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${context.parsed.y}h`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value + 'h';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    criarGraficoComparacao() {
+        const registrosFiltrados = this.obterRegistrosFiltrados();
+
+        const horasEmerson = registrosFiltrados
+            .filter(r => r.prestador === 'Emerson')
+            .reduce((sum, r) => sum + r.horas, 0);
+
+        const horasFelipe = registrosFiltrados
+            .filter(r => r.prestador === 'Felipe')
+            .reduce((sum, r) => sum + r.horas, 0);
+
+        // Destruir gráfico anterior se existir
+        if (this.graficoComparacao) {
+            this.graficoComparacao.destroy();
+        }
+
+        const ctx = document.getElementById('graficoComparacao');
+        this.graficoComparacao = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Emerson', 'Felipe'],
+                datasets: [{
+                    data: [horasEmerson, horasFelipe],
+                    backgroundColor: ['#3b82f6', '#10b981'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                return `${context.label}: ${context.parsed}h (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    criarGraficoEvolucao() {
+        const registrosFiltrados = this.obterRegistrosFiltrados();
+
+        // Agrupar por mês
+        const porMes = {};
+        registrosFiltrados.forEach(registro => {
+            const data = new Date(registro.data + 'T00:00:00');
+            const mesAno = `${data.getMonth() + 1}/${data.getFullYear()}`;
+
+            if (!porMes[mesAno]) {
+                porMes[mesAno] = { Emerson: 0, Felipe: 0 };
+            }
+
+            const prestador = registro.prestador || 'Emerson';
+            porMes[mesAno][prestador] += registro.valor;
+        });
+
+        // Ordenar por data
+        const mesesOrdenados = Object.keys(porMes).sort((a, b) => {
+            const [mesA, anoA] = a.split('/').map(Number);
+            const [mesB, anoB] = b.split('/').map(Number);
+            return anoA !== anoB ? anoA - anoB : mesA - mesB;
+        });
+
+        const labels = mesesOrdenados;
+        const valoresEmerson = mesesOrdenados.map(mes => porMes[mes].Emerson);
+        const valoresFelipe = mesesOrdenados.map(mes => porMes[mes].Felipe);
+
+        // Destruir gráfico anterior se existir
+        if (this.graficoEvolucao) {
+            this.graficoEvolucao.destroy();
+        }
+
+        const ctx = document.getElementById('graficoEvolucao');
+        this.graficoEvolucao = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Emerson',
+                        data: valoresEmerson,
+                        backgroundColor: '#3b82f6',
+                        borderColor: '#2563eb',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Felipe',
+                        data: valoresFelipe,
+                        backgroundColor: '#10b981',
+                        borderColor: '#059669',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: R$ ${context.parsed.y.toFixed(2)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'R$ ' + value.toFixed(0);
+                            }
+                        }
+                    }
+                }
+            }
+        });
     }
 
     migrarDadosAntigos() {

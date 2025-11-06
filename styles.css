@@ -37,7 +37,7 @@ header h1 {
     opacity: 0.9;
 }
 
-section, .config-section, .registro-section, .resumo-section, .filtros-section, .registros-section, .backup-section {
+section, .config-section, .registro-section, .resumo-section, .filtros-section, .registros-section, .backup-section, .dashboard-section {
     padding: 30px 40px;
     border-bottom: 1px solid #e0e0e0;
 }
@@ -331,6 +331,91 @@ td {
     font-weight: bold;
 }
 
+/* Cards de Prestador */
+.prestadores-resumo {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.prestador-card {
+    background: white;
+    border: 2px solid #3b82f6;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+.prestador-card h3 {
+    color: #3b82f6;
+    margin-bottom: 15px;
+    font-size: 1.3em;
+}
+
+.prestador-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background: #f7fafc;
+    border-radius: 8px;
+}
+
+.stat-label {
+    font-weight: 600;
+    color: #555;
+}
+
+.stat-valor {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #3b82f6;
+}
+
+.card-total {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+}
+
+/* Dashboard de Gráficos */
+.dashboard-section {
+    background: #f7fafc;
+}
+
+.graficos-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.grafico-box {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.grafico-box h3 {
+    color: #3b82f6;
+    margin-bottom: 20px;
+    font-size: 1.1em;
+}
+
+.grafico-wide {
+    grid-column: 1 / -1;
+}
+
+canvas {
+    max-height: 300px;
+}
+
 @media print {
     body {
         background: white;
@@ -340,7 +425,7 @@ td {
         box-shadow: none;
     }
 
-    .btn, .acoes-registros, .filtros-section, .config-section, .registro-section {
+    .btn, .acoes-registros, .filtros-section, .config-section, .registro-section, .dashboard-section {
         display: none;
     }
 }
