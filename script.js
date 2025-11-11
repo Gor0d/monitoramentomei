@@ -101,6 +101,26 @@ class SistemaMonitoramento {
                 this.adicionarRegistro();
             }
         });
+
+        // Modal de Edição
+        document.querySelector('.close-edicao').addEventListener('click', () => {
+            document.getElementById('modalEdicao').style.display = 'none';
+        });
+
+        document.getElementById('cancelarEdicao').addEventListener('click', () => {
+            document.getElementById('modalEdicao').style.display = 'none';
+        });
+
+        document.getElementById('salvarEdicao').addEventListener('click', () => {
+            this.salvarEdicaoRegistro();
+        });
+
+        window.addEventListener('click', (event) => {
+            const modalEdicao = document.getElementById('modalEdicao');
+            if (event.target === modalEdicao) {
+                modalEdicao.style.display = 'none';
+            }
+        });
     }
 
     salvarValorHora() {
@@ -189,6 +209,64 @@ class SistemaMonitoramento {
         document.getElementById('horasTrabalho').value = '';
         document.getElementById('descricao').value = '';
         document.getElementById('cliente').value = '';
+    }
+
+    editarRegistro(id) {
+        const registro = this.registros.find(r => r.id === id);
+        if (!registro) return;
+
+        // Preencher o formulário com os dados do registro
+        document.getElementById('editarId').value = registro.id;
+        document.getElementById('editarPrestador').value = registro.prestador || 'Emerson';
+        document.getElementById('editarData').value = registro.data;
+        document.getElementById('editarHoras').value = registro.horas;
+        document.getElementById('editarCliente').value = registro.cliente || '';
+        document.getElementById('editarDescricao').value = registro.descricao || '';
+
+        // Abrir modal
+        document.getElementById('modalEdicao').style.display = 'block';
+    }
+
+    salvarEdicaoRegistro() {
+        const id = parseInt(document.getElementById('editarId').value);
+        const prestador = document.getElementById('editarPrestador').value;
+        const data = document.getElementById('editarData').value;
+        const horas = parseFloat(document.getElementById('editarHoras').value);
+        const cliente = document.getElementById('editarCliente').value;
+        const descricao = document.getElementById('editarDescricao').value;
+
+        // Validações
+        if (!data || isNaN(horas) || horas <= 0) {
+            alert('Por favor, preencha a data e as horas trabalhadas corretamente.');
+            return;
+        }
+
+        // Encontrar e atualizar o registro
+        const registro = this.registros.find(r => r.id === id);
+        if (!registro) {
+            alert('Registro não encontrado!');
+            return;
+        }
+
+        // Obter valor/hora do prestador
+        const valorHoraPrestador = this.valoresPorHora[prestador] || 0;
+
+        // Atualizar dados
+        registro.prestador = prestador;
+        registro.data = data;
+        registro.horas = horas;
+        registro.cliente = cliente;
+        registro.descricao = descricao;
+        registro.valor = horas * valorHoraPrestador;
+
+        // Salvar e atualizar interface
+        this.salvarDados();
+        this.atualizarInterface();
+
+        // Fechar modal
+        document.getElementById('modalEdicao').style.display = 'none';
+
+        alert('Registro atualizado com sucesso!');
     }
 
     excluirRegistro(id) {
@@ -333,6 +411,9 @@ class SistemaMonitoramento {
                         : ''}
                 </td>
                 <td>
+                    <button class="btn btn-secondary" style="margin-right: 5px;" onclick="sistema.editarRegistro(${registro.id})">
+                        Editar
+                    </button>
                     <button class="btn btn-danger" onclick="sistema.excluirRegistro(${registro.id})">
                         Excluir
                     </button>

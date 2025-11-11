@@ -208,6 +208,50 @@
                 <button id="imprimirRelatorio" class="btn btn-primary">Imprimir Relatório</button>
             </div>
         </div>
+
+        <!-- Modal de Edição -->
+        <div id="modalEdicao" class="modal">
+            <div class="modal-content">
+                <span class="close-edicao">&times;</span>
+                <h2>Editar Registro</h2>
+                <div class="form-edicao">
+                    <input type="hidden" id="editarId">
+
+                    <div class="form-group">
+                        <label for="editarPrestador">Prestador:</label>
+                        <select id="editarPrestador" class="select-prestador">
+                            <option value="Emerson">Emerson</option>
+                            <option value="Felipe">Felipe</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editarData">Data:</label>
+                        <input type="date" id="editarData" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editarHoras">Horas Trabalhadas:</label>
+                        <input type="number" id="editarHoras" step="0.5" min="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editarCliente">Cliente:</label>
+                        <input type="text" id="editarCliente">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editarDescricao">Descrição dos Serviços Prestados:</label>
+                        <textarea id="editarDescricao" rows="6"></textarea>
+                    </div>
+
+                    <div class="form-acoes">
+                        <button id="salvarEdicao" class="btn btn-success">Salvar Alterações</button>
+                        <button id="cancelarEdicao" class="btn btn-secondary">Cancelar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="script.js"></script>
