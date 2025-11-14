@@ -376,10 +376,15 @@ class SistemaMonitoramento {
         const tbody = document.getElementById('corpoTabela');
         const registrosFiltrados = this.obterRegistrosFiltrados();
 
+        console.log('🔄 Atualizando tabela...');
+        console.log(`📋 Total de registros no sistema: ${this.registros.length}`);
+        console.log(`🔎 Registros filtrados: ${registrosFiltrados.length}`);
+
         // Ordenar por data (mais recente primeiro)
         registrosFiltrados.sort((a, b) => new Date(b.data) - new Date(a.data));
 
         if (registrosFiltrados.length === 0) {
+            console.log('⚠️ Nenhum registro para exibir');
             tbody.innerHTML = `
                 <tr class="empty-state">
                     <td colspan="7">Nenhum registro encontrado.</td>
@@ -954,8 +959,12 @@ class SistemaMonitoramento {
 
     carregarDados() {
         const dados = localStorage.getItem('sistemaMonitoramentoMEI');
+        console.log('🔍 Carregando dados do localStorage...');
+        console.log('📦 Dados brutos:', dados);
+
         if (dados) {
             const parsed = JSON.parse(dados);
+            console.log('✅ Dados parseados:', parsed);
 
             // Novo formato
             if (parsed.valoresPorHora) {
@@ -967,6 +976,10 @@ class SistemaMonitoramento {
             }
 
             this.registros = parsed.registros || [];
+            console.log(`📊 Total de registros carregados: ${this.registros.length}`);
+            console.log('📋 Registros:', this.registros);
+        } else {
+            console.log('⚠️ Nenhum dado encontrado no localStorage');
         }
     }
 }
