@@ -8,6 +8,8 @@ class SistemaMonitoramento {
         this.prestadorAtual = 'Emerson';
         this.registros = [];
         this.registrosSelecionados = new Set(); // IDs dos registros selecionados
+        this.paginaAtual = 1;
+        this.registrosPorPagina = 20;
         this.filtros = {
             dataInicio: null,
             dataFim: null,
@@ -135,6 +137,28 @@ class SistemaMonitoramento {
 
         document.getElementById('marcarSelecionadosNF').addEventListener('click', () => {
             this.marcarSelecionadosComoNF();
+        });
+
+        // Paginação
+        document.getElementById('registrosPorPagina').addEventListener('change', (e) => {
+            this.registrosPorPagina = parseInt(e.target.value);
+            this.paginaAtual = 1; // Volta para primeira página
+            this.atualizarInterface();
+        });
+
+        document.getElementById('paginaAnterior').addEventListener('click', () => {
+            if (this.paginaAtual > 1) {
+                this.paginaAtual--;
+                this.atualizarInterface();
+            }
+        });
+
+        document.getElementById('paginaProxima').addEventListener('click', () => {
+            const totalPaginas = this.calcularTotalPaginas();
+            if (this.paginaAtual < totalPaginas) {
+                this.paginaAtual++;
+                this.atualizarInterface();
+            }
         });
     }
 
@@ -523,6 +547,11 @@ class SistemaMonitoramento {
             this.formatarMoeda(this.valoresPorHora[this.prestadorAtual]);
     }
 
+    calcularTotalPaginas() {
+        const registrosFiltrados = this.obterRegistrosFiltrados();
+        return Math.ceil(registrosFiltrados.length / this.registrosPorPagina);
+    }
+
     atualizarTabela() {
         const tbody = document.getElementById('corpoTabela');
         const registrosFiltrados = this.obterRegistrosFiltrados();
@@ -534,6 +563,20 @@ class SistemaMonitoramento {
         // Ordenar por data (mais recente primeiro)
         registrosFiltrados.sort((a, b) => new Date(b.data) - new Date(a.data));
 
+        // Atualizar informações de paginação
+        const totalPaginas = this.calcularTotalPaginas();
+        const inicio = (this.paginaAtual - 1) * this.registrosPorPagina;
+        const fim = inicio + this.registrosPorPagina;
+        const registrosPaginados = registrosFiltrados.slice(inicio, fim);
+
+        // Atualizar UI de paginação
+        document.getElementById('infoPaginacao').textContent = `Página ${this.paginaAtual} de ${totalPaginas || 1}`;
+        document.getElementById('totalRegistros').textContent = `Total: ${registrosFiltrados.length} registro${registrosFiltrados.length !== 1 ? 's' : ''}`;
+
+        // Habilitar/desabilitar botões
+        document.getElementById('paginaAnterior').disabled = this.paginaAtual === 1;
+        document.getElementById('paginaProxima').disabled = this.paginaAtual >= totalPaginas;
+
         if (registrosFiltrados.length === 0) {
             console.log('⚠️ Nenhum registro para exibir');
             tbody.innerHTML = `
@@ -544,7 +587,7 @@ class SistemaMonitoramento {
             return;
         }
 
-        tbody.innerHTML = registrosFiltrados.map(registro => {
+        tbody.innerHTML = registrosPaginados.map(registro => {
             const descricaoResumo = registro.descricao
                 ? (registro.descricao.length > 50
                     ? registro.descricao.substring(0, 50) + '...'

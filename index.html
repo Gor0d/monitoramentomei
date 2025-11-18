@@ -227,6 +227,27 @@
                 </div>
             </div>
 
+            <!-- Controles de Paginação -->
+            <div style="background: #fef3c7; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; border-left: 4px solid #f59e0b;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <label style="font-weight: bold; color: #92400e;">Registros por página:</label>
+                    <select id="registrosPorPagina" class="select-prestador" style="width: auto; padding: 5px 10px;">
+                        <option value="10">10</option>
+                        <option value="20" selected>20</option>
+                        <option value="30">30</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button id="paginaAnterior" class="btn btn-secondary" style="font-size: 0.9em; padding: 5px 15px;">← Anterior</button>
+                    <span id="infoPaginacao" style="font-weight: bold; color: #92400e;">Página 1 de 1</span>
+                    <button id="paginaProxima" class="btn btn-secondary" style="font-size: 0.9em; padding: 5px 15px;">Próxima →</button>
+                </div>
+                <div>
+                    <span id="totalRegistros" style="color: #78350f; font-size: 0.9em;">Total: 0 registros</span>
+                </div>
+            </div>
+
             <div class="tabela-container">
                 <table id="tabelaRegistros">
                     <thead>
