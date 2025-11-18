@@ -120,6 +120,19 @@
       "descricao": "Configuração HML - MVSACR \nConfiguração Assinaturas Digitais Green S+ - PEP e Soul\nConfiguração de documentos do MV Editor - PEP e Soul ",
       "cliente": "HAB",
       "valor": 280
+    },
+    {
+      "id": 1763500000000,
+      "prestador": "Emerson",
+      "data": "2025-11-17",
+      "horas": 4,
+      "descricao": "Desenvolvimento e manutenção de sistemas - Projetos Green, MVSACR e Infinity",
+      "cliente": "HAB",
+      "valor": 280,
+      "nfGerada": false,
+      "numeroNF": null,
+      "dataEmissaoNF": null,
+      "chaveAcessoNF": null
     }
   ],
   "prestadorAtual": "Emerson",
