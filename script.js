@@ -197,7 +197,8 @@ class SistemaMonitoramento {
             valor: horas * valorHoraPrestador,
             nfGerada: false,
             numeroNF: null,
-            dataEmissaoNF: null
+            dataEmissaoNF: null,
+            chaveAcessoNF: null
         };
 
         this.registros.push(registro);
@@ -285,17 +286,47 @@ class SistemaMonitoramento {
         const registro = this.registros.find(r => r.id === id);
         if (!registro) return;
 
-        const numeroNF = prompt('Digite o número da Nota Fiscal (opcional):');
+        const numeroNF = prompt('Digite o número da Nota Fiscal:');
+        if (!numeroNF) {
+            alert('Número da NF é obrigatório!');
+            return;
+        }
+
         const dataEmissao = prompt('Digite a data de emissão (DD/MM/AAAA) ou deixe em branco para hoje:');
+        const chaveAcesso = prompt('Digite a Chave de Acesso da NFS-e (44 dígitos) - Opcional:');
 
         registro.nfGerada = true;
-        registro.numeroNF = numeroNF || null;
+        registro.numeroNF = numeroNF;
         registro.dataEmissaoNF = dataEmissao || new Date().toLocaleDateString('pt-BR');
+        registro.chaveAcessoNF = chaveAcesso || null;
 
         this.salvarDados();
         this.atualizarInterface();
 
-        alert(`Registro marcado como NF gerada com sucesso! ${numeroNF ? `NF: ${numeroNF}` : ''}`);
+        alert(`Registro marcado como NF ${numeroNF} gerada com sucesso!`);
+    }
+
+    editarNFGerada(id) {
+        const registro = this.registros.find(r => r.id === id);
+        if (!registro || !registro.nfGerada) return;
+
+        const numeroNF = prompt('Número da Nota Fiscal:', registro.numeroNF || '');
+        if (!numeroNF) {
+            alert('Número da NF é obrigatório!');
+            return;
+        }
+
+        const dataEmissao = prompt('Data de emissão (DD/MM/AAAA):', registro.dataEmissaoNF || '');
+        const chaveAcesso = prompt('Chave de Acesso da NFS-e (44 dígitos):', registro.chaveAcessoNF || '');
+
+        registro.numeroNF = numeroNF;
+        registro.dataEmissaoNF = dataEmissao || registro.dataEmissaoNF;
+        registro.chaveAcessoNF = chaveAcesso || null;
+
+        this.salvarDados();
+        this.atualizarInterface();
+
+        alert(`Dados da NF ${numeroNF} atualizados com sucesso!`);
     }
 
     verDescricaoCompleta(id) {
@@ -304,6 +335,15 @@ class SistemaMonitoramento {
 
         const modal = document.getElementById('modalRelatorio');
         const conteudo = document.getElementById('conteudoRelatorio');
+
+        const infoNF = registro.nfGerada ? `
+            <div style="background: #d1fae5; padding: 20px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid #10b981;">
+                <h3 style="margin-bottom: 15px; color: #065f46;">✅ Informações da Nota Fiscal</h3>
+                <p><strong>Número da NF:</strong> ${registro.numeroNF || '-'}</p>
+                <p><strong>Data de Emissão:</strong> ${registro.dataEmissaoNF || '-'}</p>
+                ${registro.chaveAcessoNF ? `<p><strong>Chave de Acesso:</strong> <span style="font-family: monospace; font-size: 0.9em;">${registro.chaveAcessoNF}</span></p>` : ''}
+            </div>
+        ` : '';
 
         conteudo.innerHTML = `
             <div style="background: #f7fafc; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
@@ -314,6 +354,7 @@ class SistemaMonitoramento {
                 <p><strong>Valor:</strong> ${this.formatarMoeda(registro.valor)}</p>
                 <p><strong>Cliente:</strong> ${registro.cliente || '-'}</p>
             </div>
+            ${infoNF}
             <div style="background: white; padding: 20px; border: 2px solid #3b82f6; border-radius: 10px;">
                 <h3 style="margin-bottom: 15px; color: #3b82f6;">Descrição dos Serviços Prestados</h3>
                 <div style="white-space: pre-wrap; line-height: 1.6; color: #333;">
@@ -432,7 +473,10 @@ class SistemaMonitoramento {
             const temDescricao = registro.descricao && registro.descricao.length > 0;
 
             const statusNF = registro.nfGerada
-                ? `<span style="color: #10b981; font-weight: bold;">✓ NF ${registro.numeroNF || 'gerada'}</span>`
+                ? `<div style="display: flex; flex-direction: column; gap: 5px; align-items: center;">
+                    <span style="color: #10b981; font-weight: bold;">✓ NF ${registro.numeroNF || 'gerada'}</span>
+                    <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.75em;" onclick="sistema.editarNFGerada(${registro.id})">Editar NF</button>
+                   </div>`
                 : `<button class="btn btn-primary" style="padding: 5px 10px; font-size: 0.85em;" onclick="sistema.marcarNFGerada(${registro.id})">Marcar NF</button>`;
 
             return `
