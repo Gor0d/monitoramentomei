@@ -7,6 +7,7 @@ class SistemaMonitoramento {
         };
         this.prestadorAtual = 'Emerson';
         this.registros = [];
+        this.registrosSelecionados = new Set(); // IDs dos registros selecionados
         this.filtros = {
             dataInicio: null,
             dataFim: null,
@@ -121,6 +122,19 @@ class SistemaMonitoramento {
             if (event.target === modalEdicao) {
                 modalEdicao.style.display = 'none';
             }
+        });
+
+        // Seleção em lote
+        document.getElementById('selecionarTodos').addEventListener('click', () => {
+            this.selecionarTodos();
+        });
+
+        document.getElementById('desmarcarTodos').addEventListener('click', () => {
+            this.desmarcarTodos();
+        });
+
+        document.getElementById('marcarSelecionadosNF').addEventListener('click', () => {
+            this.marcarSelecionadosComoNF();
         });
     }
 
@@ -329,6 +343,72 @@ class SistemaMonitoramento {
         alert(`Dados da NF ${numeroNF} atualizados com sucesso!`);
     }
 
+    toggleSelecao(id) {
+        if (this.registrosSelecionados.has(id)) {
+            this.registrosSelecionados.delete(id);
+        } else {
+            this.registrosSelecionados.add(id);
+        }
+        this.atualizarContadorSelecao();
+    }
+
+    selecionarTodos() {
+        const registrosFiltrados = this.obterRegistrosFiltrados();
+        registrosFiltrados.forEach(r => {
+            if (!r.nfGerada) { // Só seleciona registros sem NF
+                this.registrosSelecionados.add(r.id);
+            }
+        });
+        this.atualizarInterface();
+    }
+
+    desmarcarTodos() {
+        this.registrosSelecionados.clear();
+        this.atualizarInterface();
+    }
+
+    atualizarContadorSelecao() {
+        const contador = document.getElementById('contadorSelecionados');
+        const qtd = this.registrosSelecionados.size;
+        contador.textContent = `${qtd} selecionado${qtd !== 1 ? 's' : ''}`;
+    }
+
+    marcarSelecionadosComoNF() {
+        if (this.registrosSelecionados.size === 0) {
+            alert('Nenhum registro selecionado!');
+            return;
+        }
+
+        const numeroNF = prompt('Digite o número da Nota Fiscal:');
+        if (!numeroNF) {
+            alert('Número da NF é obrigatório!');
+            return;
+        }
+
+        const dataEmissao = prompt('Digite a data de emissão (DD/MM/AAAA) ou deixe em branco para hoje:');
+        const chaveAcesso = prompt('Digite a Chave de Acesso da NFS-e (44 dígitos) - Opcional:');
+
+        const dataFinal = dataEmissao || new Date().toLocaleDateString('pt-BR');
+        let contador = 0;
+
+        this.registrosSelecionados.forEach(id => {
+            const registro = this.registros.find(r => r.id === id);
+            if (registro && !registro.nfGerada) {
+                registro.nfGerada = true;
+                registro.numeroNF = numeroNF;
+                registro.dataEmissaoNF = dataFinal;
+                registro.chaveAcessoNF = chaveAcesso || null;
+                contador++;
+            }
+        });
+
+        this.registrosSelecionados.clear();
+        this.salvarDados();
+        this.atualizarInterface();
+
+        alert(`${contador} registro(s) marcado(s) como NF ${numeroNF} com sucesso!`);
+    }
+
     verDescricaoCompleta(id) {
         const registro = this.registros.find(r => r.id === id);
         if (!registro) return;
@@ -434,6 +514,7 @@ class SistemaMonitoramento {
         this.atualizarValorHora();
         this.atualizarTabela();
         this.atualizarResumo();
+        this.atualizarContadorSelecao();
     }
 
     atualizarValorHora() {
@@ -457,7 +538,7 @@ class SistemaMonitoramento {
             console.log('⚠️ Nenhum registro para exibir');
             tbody.innerHTML = `
                 <tr class="empty-state">
-                    <td colspan="8">Nenhum registro encontrado.</td>
+                    <td colspan="9">Nenhum registro encontrado.</td>
                 </tr>
             `;
             return;
@@ -479,8 +560,13 @@ class SistemaMonitoramento {
                    </div>`
                 : `<button class="btn btn-primary" style="padding: 5px 10px; font-size: 0.85em;" onclick="sistema.marcarNFGerada(${registro.id})">Marcar NF</button>`;
 
+            const checkboxChecked = this.registrosSelecionados.has(registro.id) ? 'checked' : '';
+
             return `
             <tr style="${registro.nfGerada ? 'background-color: #f0fdf4;' : ''}">
+                <td style="text-align: center;">
+                    <input type="checkbox" ${checkboxChecked} onchange="sistema.toggleSelecao(${registro.id})" style="cursor: pointer; width: 18px; height: 18px;">
+                </td>
                 <td><strong>${registro.prestador || 'Emerson'}</strong></td>
                 <td>${this.formatarData(registro.data)}</td>
                 <td>${registro.horas}h</td>

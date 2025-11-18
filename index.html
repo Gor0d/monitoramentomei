@@ -215,10 +215,23 @@
                 <button id="gerarRelatorio" class="btn btn-info">Gerar Relatório</button>
                 <button id="exportarDados" class="btn btn-info">Exportar para CSV</button>
             </div>
+
+            <!-- Controles de Seleção em Lote -->
+            <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #3b82f6;">
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <button id="selecionarTodos" class="btn btn-secondary" style="font-size: 0.9em;">✓ Selecionar Todos</button>
+                    <button id="desmarcarTodos" class="btn btn-secondary" style="font-size: 0.9em;">✗ Desmarcar Todos</button>
+                    <span style="margin: 0 10px; color: #666;">|</span>
+                    <button id="marcarSelecionadosNF" class="btn btn-primary" style="font-size: 0.9em;">📝 Marcar Selecionados como NF</button>
+                    <span id="contadorSelecionados" style="margin-left: 10px; color: #3b82f6; font-weight: bold;">0 selecionados</span>
+                </div>
+            </div>
+
             <div class="tabela-container">
                 <table id="tabelaRegistros">
                     <thead>
                         <tr>
+                            <th style="width: 40px;">Sel.</th>
                             <th>Prestador</th>
                             <th>Data</th>
                             <th>Horas</th>
@@ -231,7 +244,7 @@
                     </thead>
                     <tbody id="corpoTabela">
                         <tr class="empty-state">
-                            <td colspan="8">Nenhum registro encontrado. Adicione seu primeiro registro acima.</td>
+                            <td colspan="9">Nenhum registro encontrado. Adicione seu primeiro registro acima.</td>
                         </tr>
                     </tbody>
                 </table>

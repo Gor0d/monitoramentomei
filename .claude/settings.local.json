@@ -6,7 +6,12 @@
       "Bash(git commit:*)",
       "Bash(git remote add:*)",
       "Bash(git branch:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(explorer \"c:\\Users\\emerson.guimaraes\\Projeto MEI\\index.html\")",
+      "Bash(start index.html)",
+      "Bash(dir /b /s *.json 2)",
+      "Bash(nul)",
+      "Bash(del nul)"
     ],
     "deny": [],
     "ask": []
