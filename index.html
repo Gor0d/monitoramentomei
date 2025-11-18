@@ -108,6 +108,39 @@
                     <p class="valor-grande destaque" id="previsaoRecebimento">R$ 0,00</p>
                 </div>
             </div>
+
+            <!-- Separação: Pendentes vs Faturados -->
+            <div style="margin-top: 30px;">
+                <h3 style="margin-bottom: 15px;">📋 Resumo por Status de Faturamento</h3>
+                <div class="cards-resumo">
+                    <div class="card" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b;">
+                        <h3 style="color: #92400e;">⏳ Pendentes (Sem NF)</h3>
+                        <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+                            <div>
+                                <p style="font-size: 0.9em; color: #78350f;">Horas:</p>
+                                <p style="font-size: 1.5em; font-weight: bold; color: #92400e;" id="horasPendentes">0h</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <p style="font-size: 0.9em; color: #78350f;">Valor:</p>
+                                <p style="font-size: 1.5em; font-weight: bold; color: #92400e;" id="valorPendentes">R$ 0,00</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card" style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border-left: 4px solid #10b981;">
+                        <h3 style="color: #065f46;">✅ Faturados (Com NF)</h3>
+                        <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+                            <div>
+                                <p style="font-size: 0.9em; color: #064e3b;">Horas:</p>
+                                <p style="font-size: 1.5em; font-weight: bold; color: #065f46;" id="horasFaturados">0h</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <p style="font-size: 0.9em; color: #064e3b;">Valor:</p>
+                                <p style="font-size: 1.5em; font-weight: bold; color: #065f46;" id="valorFaturados">R$ 0,00</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Dashboard de Gráficos -->
@@ -157,6 +190,10 @@
                     <label for="filtroCliente">Cliente:</label>
                     <input type="text" id="filtroCliente" placeholder="Filtrar por cliente">
                 </div>
+                <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="filtroApenasPendentes" style="width: auto; margin: 0;">
+                    <label for="filtroApenasPendentes" style="margin: 0;">Apenas registros pendentes (sem NF)</label>
+                </div>
                 <button id="aplicarFiltros" class="btn btn-secondary">Aplicar Filtros</button>
                 <button id="limparFiltros" class="btn btn-secondary">Limpar Filtros</button>
             </div>
@@ -188,12 +225,13 @@
                             <th>Valor</th>
                             <th>Cliente</th>
                             <th>Descrição</th>
+                            <th>Status NF</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
                     <tbody id="corpoTabela">
                         <tr class="empty-state">
-                            <td colspan="7">Nenhum registro encontrado. Adicione seu primeiro registro acima.</td>
+                            <td colspan="8">Nenhum registro encontrado. Adicione seu primeiro registro acima.</td>
                         </tr>
                     </tbody>
                 </table>

@@ -11,7 +11,8 @@ class SistemaMonitoramento {
             dataInicio: null,
             dataFim: null,
             cliente: null,
-            prestador: null
+            prestador: null,
+            apenasPendentes: false
         };
         this.inicializar();
     }
@@ -193,7 +194,10 @@ class SistemaMonitoramento {
             horas: horas,
             descricao: descricao,
             cliente: cliente,
-            valor: horas * valorHoraPrestador
+            valor: horas * valorHoraPrestador,
+            nfGerada: false,
+            numeroNF: null,
+            dataEmissaoNF: null
         };
 
         this.registros.push(registro);
@@ -277,6 +281,23 @@ class SistemaMonitoramento {
         }
     }
 
+    marcarNFGerada(id) {
+        const registro = this.registros.find(r => r.id === id);
+        if (!registro) return;
+
+        const numeroNF = prompt('Digite o número da Nota Fiscal (opcional):');
+        const dataEmissao = prompt('Digite a data de emissão (DD/MM/AAAA) ou deixe em branco para hoje:');
+
+        registro.nfGerada = true;
+        registro.numeroNF = numeroNF || null;
+        registro.dataEmissaoNF = dataEmissao || new Date().toLocaleDateString('pt-BR');
+
+        this.salvarDados();
+        this.atualizarInterface();
+
+        alert(`Registro marcado como NF gerada com sucesso! ${numeroNF ? `NF: ${numeroNF}` : ''}`);
+    }
+
     verDescricaoCompleta(id) {
         const registro = this.registros.find(r => r.id === id);
         if (!registro) return;
@@ -312,6 +333,7 @@ class SistemaMonitoramento {
         this.filtros.dataInicio = document.getElementById('filtroDataInicio').value;
         this.filtros.dataFim = document.getElementById('filtroDataFim').value;
         this.filtros.cliente = document.getElementById('filtroCliente').value.toLowerCase();
+        this.filtros.apenasPendentes = document.getElementById('filtroApenasPendentes').checked;
 
         this.atualizarInterface();
     }
@@ -321,13 +343,15 @@ class SistemaMonitoramento {
             dataInicio: null,
             dataFim: null,
             cliente: null,
-            prestador: null
+            prestador: null,
+            apenasPendentes: false
         };
 
         document.getElementById('filtroPrestador').value = '';
         document.getElementById('filtroDataInicio').value = '';
         document.getElementById('filtroDataFim').value = '';
         document.getElementById('filtroCliente').value = '';
+        document.getElementById('filtroApenasPendentes').checked = false;
 
         this.atualizarInterface();
     }
@@ -353,6 +377,11 @@ class SistemaMonitoramento {
 
             // Filtro de cliente
             if (this.filtros.cliente && !registro.cliente.toLowerCase().includes(this.filtros.cliente)) {
+                passa = false;
+            }
+
+            // Filtro de apenas pendentes (sem NF gerada)
+            if (this.filtros.apenasPendentes && registro.nfGerada) {
                 passa = false;
             }
 
@@ -387,7 +416,7 @@ class SistemaMonitoramento {
             console.log('⚠️ Nenhum registro para exibir');
             tbody.innerHTML = `
                 <tr class="empty-state">
-                    <td colspan="7">Nenhum registro encontrado.</td>
+                    <td colspan="8">Nenhum registro encontrado.</td>
                 </tr>
             `;
             return;
@@ -402,8 +431,12 @@ class SistemaMonitoramento {
 
             const temDescricao = registro.descricao && registro.descricao.length > 0;
 
+            const statusNF = registro.nfGerada
+                ? `<span style="color: #10b981; font-weight: bold;">✓ NF ${registro.numeroNF || 'gerada'}</span>`
+                : `<button class="btn btn-primary" style="padding: 5px 10px; font-size: 0.85em;" onclick="sistema.marcarNFGerada(${registro.id})">Marcar NF</button>`;
+
             return `
-            <tr>
+            <tr style="${registro.nfGerada ? 'background-color: #f0fdf4;' : ''}">
                 <td><strong>${registro.prestador || 'Emerson'}</strong></td>
                 <td>${this.formatarData(registro.data)}</td>
                 <td>${registro.horas}h</td>
@@ -415,6 +448,7 @@ class SistemaMonitoramento {
                         ? `<button class="btn btn-secondary" style="margin-top: 5px; padding: 5px 10px; font-size: 0.85em;" onclick="sistema.verDescricaoCompleta(${registro.id})">Ver completo</button>`
                         : ''}
                 </td>
+                <td style="text-align: center;">${statusNF}</td>
                 <td>
                     <button class="btn btn-secondary" style="margin-right: 5px;" onclick="sistema.editarRegistro(${registro.id})">
                         Editar
@@ -451,6 +485,20 @@ class SistemaMonitoramento {
         document.getElementById('valorEmerson').textContent = this.formatarMoeda(valorEmerson);
         document.getElementById('horasFelipe').textContent = `${horasFelipe.toFixed(1)}h`;
         document.getElementById('valorFelipe').textContent = this.formatarMoeda(valorFelipe);
+
+        // Separação: Pendentes vs Faturados (baseado em TODOS os registros, não filtrados)
+        const registrosPendentes = this.registros.filter(r => !r.nfGerada);
+        const horasPendentes = registrosPendentes.reduce((sum, r) => sum + r.horas, 0);
+        const valorPendentes = registrosPendentes.reduce((sum, r) => sum + r.valor, 0);
+
+        const registrosFaturados = this.registros.filter(r => r.nfGerada);
+        const horasFaturados = registrosFaturados.reduce((sum, r) => sum + r.horas, 0);
+        const valorFaturados = registrosFaturados.reduce((sum, r) => sum + r.valor, 0);
+
+        document.getElementById('horasPendentes').textContent = `${horasPendentes.toFixed(1)}h`;
+        document.getElementById('valorPendentes').textContent = this.formatarMoeda(valorPendentes);
+        document.getElementById('horasFaturados').textContent = `${horasFaturados.toFixed(1)}h`;
+        document.getElementById('valorFaturados').textContent = this.formatarMoeda(valorFaturados);
 
         // Atualizar gráficos
         this.atualizarGraficos();
