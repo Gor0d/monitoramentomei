@@ -3,7 +3,8 @@ class SistemaMonitoramento {
     constructor() {
         this.valoresPorHora = {
             'Emerson': 0,
-            'Felipe': 0
+            'Felipe': 0,
+            'Thiago Martins': 0
         };
         this.prestadorAtual = 'Emerson';
         this.registros = [];
@@ -139,6 +140,10 @@ class SistemaMonitoramento {
             this.marcarSelecionadosComoNF();
         });
 
+        document.getElementById('marcarSelecionadosPagos').addEventListener('click', () => {
+            this.marcarSelecionadosComoPagos();
+        });
+
         // Paginação
         document.getElementById('registrosPorPagina').addEventListener('change', (e) => {
             this.registrosPorPagina = parseInt(e.target.value);
@@ -236,7 +241,8 @@ class SistemaMonitoramento {
             nfGerada: false,
             numeroNF: null,
             dataEmissaoNF: null,
-            chaveAcessoNF: null
+            chaveAcessoNF: null,
+            pago: false
         };
 
         this.registros.push(registro);
@@ -367,6 +373,35 @@ class SistemaMonitoramento {
         alert(`Dados da NF ${numeroNF} atualizados com sucesso!`);
     }
 
+    marcarComoPago(id) {
+        const registro = this.registros.find(r => r.id === id);
+        if (!registro || !registro.nfGerada) {
+            alert('Apenas registros com NF gerada podem ser marcados como pagos!');
+            return;
+        }
+
+        if (registro.pago) {
+            alert('Este registro já está marcado como pago!');
+            return;
+        }
+
+        const confirmar = confirm(
+            `Deseja marcar este registro como PAGO?\n\n` +
+            `NF: ${registro.numeroNF}\n` +
+            `Valor: ${this.formatarMoeda(registro.valor)}\n` +
+            `Prestador: ${registro.prestador}\n\n` +
+            `Este valor será removido da previsão de recebimento.`
+        );
+
+        if (!confirmar) return;
+
+        registro.pago = true;
+        this.salvarDados();
+        this.atualizarInterface();
+
+        alert('Registro marcado como PAGO com sucesso!');
+    }
+
     toggleSelecao(id) {
         if (this.registrosSelecionados.has(id)) {
             this.registrosSelecionados.delete(id);
@@ -378,10 +413,14 @@ class SistemaMonitoramento {
 
     selecionarTodos() {
         const registrosFiltrados = this.obterRegistrosFiltrados();
-        registrosFiltrados.forEach(r => {
-            if (!r.nfGerada) { // Só seleciona registros sem NF
-                this.registrosSelecionados.add(r.id);
-            }
+
+        // Obter apenas os registros da página atual
+        const inicio = (this.paginaAtual - 1) * this.registrosPorPagina;
+        const fim = inicio + this.registrosPorPagina;
+        const registrosPaginaAtual = registrosFiltrados.slice(inicio, fim);
+
+        registrosPaginaAtual.forEach(r => {
+            this.registrosSelecionados.add(r.id);
         });
         this.atualizarInterface();
     }
@@ -431,6 +470,67 @@ class SistemaMonitoramento {
         this.atualizarInterface();
 
         alert(`${contador} registro(s) marcado(s) como NF ${numeroNF} com sucesso!`);
+    }
+
+    marcarSelecionadosComoPagos() {
+        if (this.registrosSelecionados.size === 0) {
+            alert('Nenhum registro selecionado!');
+            return;
+        }
+
+        // Filtrar apenas os registros com NF gerada e não pagos
+        const registrosValidos = [];
+        const registrosSemNF = [];
+        const registrosJaPagos = [];
+        let totalValor = 0;
+
+        this.registrosSelecionados.forEach(id => {
+            const registro = this.registros.find(r => r.id === id);
+            if (registro) {
+                if (registro.nfGerada && !registro.pago) {
+                    registrosValidos.push(registro);
+                    totalValor += registro.valor;
+                } else if (registro.pago) {
+                    registrosJaPagos.push(registro);
+                } else {
+                    registrosSemNF.push(registro);
+                }
+            }
+        });
+
+        if (registrosSemNF.length > 0) {
+            alert(`${registrosSemNF.length} registro(s) selecionado(s) não possui(em) NF gerada.\nApenas registros com NF podem ser marcados como pagos.`);
+        }
+
+        if (registrosJaPagos.length > 0 && registrosValidos.length === 0) {
+            alert(`Os registros selecionados já estão marcados como pagos.`);
+            return;
+        }
+
+        if (registrosValidos.length === 0) {
+            alert('Nenhum registro válido para marcar como pago!\n\nApenas registros com NF gerada e ainda não pagos podem ser marcados.');
+            return;
+        }
+
+        const confirmar = confirm(
+            `Deseja marcar ${registrosValidos.length} registro(s) como PAGOS?\n\n` +
+            `Valor total: ${this.formatarMoeda(totalValor)}\n\n` +
+            `Estes valores serão removidos da previsão de recebimento.`
+        );
+
+        if (!confirmar) return;
+
+        let contador = 0;
+        registrosValidos.forEach(registro => {
+            registro.pago = true;
+            contador++;
+        });
+
+        this.registrosSelecionados.clear();
+        this.salvarDados();
+        this.atualizarInterface();
+
+        alert(`${contador} registro(s) marcado(s) como PAGOS com sucesso!\nValor total: ${this.formatarMoeda(totalValor)}`);
     }
 
     verDescricaoCompleta(id) {
@@ -603,10 +703,18 @@ class SistemaMonitoramento {
                    </div>`
                 : `<button class="btn btn-primary" style="padding: 5px 10px; font-size: 0.85em;" onclick="sistema.marcarNFGerada(${registro.id})">Marcar NF</button>`;
 
+            const statusPagamento = registro.pago
+                ? `<span style="color: #059669; font-weight: bold;">✓ Pago</span>`
+                : (registro.nfGerada
+                    ? `<button class="btn btn-success" style="padding: 5px 10px; font-size: 0.85em;" onclick="sistema.marcarComoPago(${registro.id})">Marcar Pago</button>`
+                    : `<span style="color: #9ca3af;">-</span>`);
+
             const checkboxChecked = this.registrosSelecionados.has(registro.id) ? 'checked' : '';
 
+            const corFundo = registro.pago ? 'background-color: #d1fae5;' : (registro.nfGerada ? 'background-color: #f0fdf4;' : '');
+
             return `
-            <tr style="${registro.nfGerada ? 'background-color: #f0fdf4;' : ''}">
+            <tr style="${corFundo}">
                 <td style="text-align: center;">
                     <input type="checkbox" ${checkboxChecked} onchange="sistema.toggleSelecao(${registro.id})" style="cursor: pointer; width: 18px; height: 18px;">
                 </td>
@@ -622,6 +730,7 @@ class SistemaMonitoramento {
                         : ''}
                 </td>
                 <td style="text-align: center;">${statusNF}</td>
+                <td style="text-align: center;">${statusPagamento}</td>
                 <td>
                     <button class="btn btn-secondary" style="margin-right: 5px;" onclick="sistema.editarRegistro(${registro.id})">
                         Editar
@@ -638,26 +747,33 @@ class SistemaMonitoramento {
     atualizarResumo() {
         const registrosFiltrados = this.obterRegistrosFiltrados();
 
-        // Totais gerais
+        // Totais gerais (apenas registros não pagos para previsão)
         const totalHoras = registrosFiltrados.reduce((sum, r) => sum + r.horas, 0);
-        const totalValor = registrosFiltrados.reduce((sum, r) => sum + r.valor, 0);
+        const registrosNaoPagos = registrosFiltrados.filter(r => !r.pago);
+        const totalValor = registrosNaoPagos.reduce((sum, r) => sum + r.valor, 0);
 
         document.getElementById('totalHoras').textContent = `${totalHoras.toFixed(1)}h`;
         document.getElementById('previsaoRecebimento').textContent = this.formatarMoeda(totalValor);
 
-        // Por prestador
+        // Por prestador (apenas não pagos para os valores)
         const registrosEmerson = registrosFiltrados.filter(r => r.prestador === 'Emerson');
         const horasEmerson = registrosEmerson.reduce((sum, r) => sum + r.horas, 0);
-        const valorEmerson = registrosEmerson.reduce((sum, r) => sum + r.valor, 0);
+        const valorEmerson = registrosEmerson.filter(r => !r.pago).reduce((sum, r) => sum + r.valor, 0);
 
         const registrosFelipe = registrosFiltrados.filter(r => r.prestador === 'Felipe');
         const horasFelipe = registrosFelipe.reduce((sum, r) => sum + r.horas, 0);
-        const valorFelipe = registrosFelipe.reduce((sum, r) => sum + r.valor, 0);
+        const valorFelipe = registrosFelipe.filter(r => !r.pago).reduce((sum, r) => sum + r.valor, 0);
+
+        const registrosThiagoMartins = registrosFiltrados.filter(r => r.prestador === 'Thiago Martins');
+        const horasThiagoMartins = registrosThiagoMartins.reduce((sum, r) => sum + r.horas, 0);
+        const valorThiagoMartins = registrosThiagoMartins.filter(r => !r.pago).reduce((sum, r) => sum + r.valor, 0);
 
         document.getElementById('horasEmerson').textContent = `${horasEmerson.toFixed(1)}h`;
         document.getElementById('valorEmerson').textContent = this.formatarMoeda(valorEmerson);
         document.getElementById('horasFelipe').textContent = `${horasFelipe.toFixed(1)}h`;
         document.getElementById('valorFelipe').textContent = this.formatarMoeda(valorFelipe);
+        document.getElementById('horasThiagoMartins').textContent = `${horasThiagoMartins.toFixed(1)}h`;
+        document.getElementById('valorThiagoMartins').textContent = this.formatarMoeda(valorThiagoMartins);
 
         // Separação: Pendentes vs Faturados (baseado em TODOS os registros, não filtrados)
         const registrosPendentes = this.registros.filter(r => !r.nfGerada);
@@ -852,19 +968,21 @@ class SistemaMonitoramento {
                     valoresHora = dados.valoresPorHora;
                 } else if (dados.valorHora !== undefined) {
                     // Formato antigo v1.0 - migrar para Emerson
-                    valoresHora = { 'Emerson': dados.valorHora, 'Felipe': 0 };
+                    valoresHora = { 'Emerson': dados.valorHora, 'Felipe': 0, 'Thiago Martins': 0 };
                 }
 
                 // Confirmar com o usuário
                 const versao = dados.versao || '1.0';
                 const emersonValor = valoresHora['Emerson'] || 0;
                 const felipeValor = valoresHora['Felipe'] || 0;
+                const thiagoMartinsValor = valoresHora['Thiago Martins'] || 0;
 
                 const confirmar = confirm(
                     `Deseja importar este backup?\n\n` +
                     `Versão: ${versao}\n` +
                     `Valor/hora Emerson: R$ ${emersonValor.toFixed(2)}\n` +
                     `Valor/hora Felipe: R$ ${felipeValor.toFixed(2)}\n` +
+                    `Valor/hora Thiago Martins: R$ ${thiagoMartinsValor.toFixed(2)}\n` +
                     `Total de registros: ${dados.registros.length}\n` +
                     `Data da exportação: ${dados.dataExportacao ? new Date(dados.dataExportacao).toLocaleString('pt-BR') : 'Desconhecida'}\n\n` +
                     `ATENÇÃO: Isso irá substituir todos os dados atuais!`
@@ -932,7 +1050,7 @@ class SistemaMonitoramento {
         // Agrupar horas por dia e prestador
         const horasPorDia = {};
         ultimos30Dias.forEach(data => {
-            horasPorDia[data] = { Emerson: 0, Felipe: 0 };
+            horasPorDia[data] = { Emerson: 0, Felipe: 0, 'Thiago Martins': 0 };
         });
 
         registrosFiltrados.forEach(registro => {
@@ -949,6 +1067,7 @@ class SistemaMonitoramento {
 
         const datasetsEmerson = ultimos30Dias.map(data => horasPorDia[data].Emerson);
         const datasetsFelipe = ultimos30Dias.map(data => horasPorDia[data].Felipe);
+        const datasetsThiagoMartins = ultimos30Dias.map(data => horasPorDia[data]['Thiago Martins']);
 
         // Destruir gráfico anterior se existir
         if (this.graficoHorasDia) {
@@ -974,6 +1093,14 @@ class SistemaMonitoramento {
                         data: datasetsFelipe,
                         borderColor: '#10b981',
                         backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Thiago Martins',
+                        data: datasetsThiagoMartins,
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
                         tension: 0.4,
                         fill: true
                     }
@@ -1020,6 +1147,10 @@ class SistemaMonitoramento {
             .filter(r => r.prestador === 'Felipe')
             .reduce((sum, r) => sum + r.horas, 0);
 
+        const horasThiagoMartins = registrosFiltrados
+            .filter(r => r.prestador === 'Thiago Martins')
+            .reduce((sum, r) => sum + r.horas, 0);
+
         // Destruir gráfico anterior se existir
         if (this.graficoComparacao) {
             this.graficoComparacao.destroy();
@@ -1029,10 +1160,10 @@ class SistemaMonitoramento {
         this.graficoComparacao = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: ['Emerson', 'Felipe'],
+                labels: ['Emerson', 'Felipe', 'Thiago Martins'],
                 datasets: [{
-                    data: [horasEmerson, horasFelipe],
-                    backgroundColor: ['#3b82f6', '#10b981'],
+                    data: [horasEmerson, horasFelipe, horasThiagoMartins],
+                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'],
                     borderWidth: 2,
                     borderColor: '#fff'
                 }]
@@ -1068,7 +1199,7 @@ class SistemaMonitoramento {
             const mesAno = `${data.getMonth() + 1}/${data.getFullYear()}`;
 
             if (!porMes[mesAno]) {
-                porMes[mesAno] = { Emerson: 0, Felipe: 0 };
+                porMes[mesAno] = { Emerson: 0, Felipe: 0, 'Thiago Martins': 0 };
             }
 
             const prestador = registro.prestador || 'Emerson';
@@ -1085,6 +1216,7 @@ class SistemaMonitoramento {
         const labels = mesesOrdenados;
         const valoresEmerson = mesesOrdenados.map(mes => porMes[mes].Emerson);
         const valoresFelipe = mesesOrdenados.map(mes => porMes[mes].Felipe);
+        const valoresThiagoMartins = mesesOrdenados.map(mes => porMes[mes]['Thiago Martins']);
 
         // Destruir gráfico anterior se existir
         if (this.graficoEvolucao) {
@@ -1109,6 +1241,13 @@ class SistemaMonitoramento {
                         data: valoresFelipe,
                         backgroundColor: '#10b981',
                         borderColor: '#059669',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Thiago Martins',
+                        data: valoresThiagoMartins,
+                        backgroundColor: '#f59e0b',
+                        borderColor: '#d97706',
                         borderWidth: 1
                     }
                 ]
@@ -1151,6 +1290,10 @@ class SistemaMonitoramento {
                 registro.prestador = 'Emerson';
                 migrados = true;
             }
+            if (registro.pago === undefined) {
+                registro.pago = false;
+                migrados = true;
+            }
         });
 
         // Se tinha valor antigo, migrar para Emerson
@@ -1190,6 +1333,10 @@ class SistemaMonitoramento {
             // Novo formato
             if (parsed.valoresPorHora) {
                 this.valoresPorHora = parsed.valoresPorHora;
+                // Garantir que todos os prestadores existem
+                if (!this.valoresPorHora['Thiago Martins']) {
+                    this.valoresPorHora['Thiago Martins'] = 0;
+                }
             }
 
             if (parsed.prestadorAtual) {

@@ -21,6 +21,7 @@
                 <select id="prestadorConfig" class="select-prestador">
                     <option value="Emerson">Emerson</option>
                     <option value="Felipe">Felipe</option>
+                    <option value="Thiago Martins">Thiago Martins</option>
                 </select>
             </div>
             <div class="form-group">
@@ -41,6 +42,7 @@
                     <select id="prestadorRegistro" class="select-prestador">
                         <option value="Emerson">Emerson</option>
                         <option value="Felipe">Felipe</option>
+                        <option value="Thiago Martins">Thiago Martins</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -92,6 +94,19 @@
                         <div class="stat-item">
                             <span class="stat-label">Valor:</span>
                             <span class="stat-valor destaque" id="valorFelipe">R$ 0,00</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="prestador-card">
+                    <h3>📊 Thiago Martins</h3>
+                    <div class="prestador-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Horas:</span>
+                            <span class="stat-valor" id="horasThiagoMartins">0h</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Valor:</span>
+                            <span class="stat-valor destaque" id="valorThiagoMartins">R$ 0,00</span>
                         </div>
                     </div>
                 </div>
@@ -176,6 +191,7 @@
                         <option value="">Todos</option>
                         <option value="Emerson">Emerson</option>
                         <option value="Felipe">Felipe</option>
+                        <option value="Thiago Martins">Thiago Martins</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -223,6 +239,7 @@
                     <button id="desmarcarTodos" class="btn btn-secondary" style="font-size: 0.9em;">✗ Desmarcar Todos</button>
                     <span style="margin: 0 10px; color: #666;">|</span>
                     <button id="marcarSelecionadosNF" class="btn btn-primary" style="font-size: 0.9em;">📝 Marcar Selecionados como NF</button>
+                    <button id="marcarSelecionadosPagos" class="btn btn-success" style="font-size: 0.9em;">💰 Marcar Selecionados como Pagos</button>
                     <span id="contadorSelecionados" style="margin-left: 10px; color: #3b82f6; font-weight: bold;">0 selecionados</span>
                 </div>
             </div>
@@ -260,12 +277,13 @@
                             <th>Cliente</th>
                             <th>Descrição</th>
                             <th>Status NF</th>
+                            <th>Pagamento</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
                     <tbody id="corpoTabela">
                         <tr class="empty-state">
-                            <td colspan="9">Nenhum registro encontrado. Adicione seu primeiro registro acima.</td>
+                            <td colspan="10">Nenhum registro encontrado. Adicione seu primeiro registro acima.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -294,6 +312,7 @@
                         <select id="editarPrestador" class="select-prestador">
                             <option value="Emerson">Emerson</option>
                             <option value="Felipe">Felipe</option>
+                            <option value="Thiago Martins">Thiago Martins</option>
                         </select>
                     </div>
 

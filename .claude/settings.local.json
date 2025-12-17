@@ -11,7 +11,12 @@
       "Bash(start index.html)",
       "Bash(dir /b /s *.json 2)",
       "Bash(nul)",
-      "Bash(del nul)"
+      "Bash(del nul)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(python -m http.server:*)",
+      "Bash(taskkill:*)",
+      "Bash(taskkill /F /PID 8344)"
     ],
     "deny": [],
     "ask": []
