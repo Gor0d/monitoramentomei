@@ -16,7 +16,14 @@
       "Bash(findstr:*)",
       "Bash(python -m http.server:*)",
       "Bash(taskkill:*)",
-      "Bash(taskkill /F /PID 8344)"
+      "Bash(taskkill /F /PID 8344)",
+      "Bash(timeout:*)",
+      "Bash(start http://localhost:8000)",
+      "Bash(node:*)",
+      "Bash(wc:*)",
+      "Bash(ping:*)",
+      "Bash(start http://localhost:8080)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8000)"
     ],
     "deny": [],
     "ask": []

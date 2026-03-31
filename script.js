@@ -4,7 +4,8 @@ class SistemaMonitoramento {
         this.valoresPorHora = {
             'Emerson': 0,
             'Felipe': 0,
-            'Thiago Martins': 0
+            'Thiago Martins': 0,
+            'Carlos': 0
         };
         this.prestadorAtual = 'Emerson';
         this.registros = [];
@@ -72,6 +73,11 @@ class SistemaMonitoramento {
         // Exportar CSV
         document.getElementById('exportarDados').addEventListener('click', () => {
             this.exportarCSV();
+        });
+
+        // Gerar Descrição para NF
+        document.getElementById('gerarDescricaoNF').addEventListener('click', () => {
+            this.gerarDescricaoNF();
         });
 
         // Exportar JSON (Backup)
@@ -768,12 +774,18 @@ class SistemaMonitoramento {
         const horasThiagoMartins = registrosThiagoMartins.reduce((sum, r) => sum + r.horas, 0);
         const valorThiagoMartins = registrosThiagoMartins.filter(r => !r.pago).reduce((sum, r) => sum + r.valor, 0);
 
+        const registrosCarlos = registrosFiltrados.filter(r => r.prestador === 'Carlos');
+        const horasCarlos = registrosCarlos.reduce((sum, r) => sum + r.horas, 0);
+        const valorCarlos = registrosCarlos.filter(r => !r.pago).reduce((sum, r) => sum + r.valor, 0);
+
         document.getElementById('horasEmerson').textContent = `${horasEmerson.toFixed(1)}h`;
         document.getElementById('valorEmerson').textContent = this.formatarMoeda(valorEmerson);
         document.getElementById('horasFelipe').textContent = `${horasFelipe.toFixed(1)}h`;
         document.getElementById('valorFelipe').textContent = this.formatarMoeda(valorFelipe);
         document.getElementById('horasThiagoMartins').textContent = `${horasThiagoMartins.toFixed(1)}h`;
         document.getElementById('valorThiagoMartins').textContent = this.formatarMoeda(valorThiagoMartins);
+        document.getElementById('horasCarlos').textContent = `${horasCarlos.toFixed(1)}h`;
+        document.getElementById('valorCarlos').textContent = this.formatarMoeda(valorCarlos);
 
         // Separação: Pendentes vs Faturados (baseado em TODOS os registros, não filtrados)
         const registrosPendentes = this.registros.filter(r => !r.nfGerada);
@@ -788,6 +800,46 @@ class SistemaMonitoramento {
         document.getElementById('valorPendentes').textContent = this.formatarMoeda(valorPendentes);
         document.getElementById('horasFaturados').textContent = `${horasFaturados.toFixed(1)}h`;
         document.getElementById('valorFaturados').textContent = this.formatarMoeda(valorFaturados);
+
+        // Resumo Financeiro Detalhado
+        const registrosSemNF = this.registros.filter(r => !r.nfGerada && !r.pago);
+        const valorSemNF = registrosSemNF.reduce((sum, r) => sum + r.valor, 0);
+
+        const registrosComNFNaoPago = this.registros.filter(r => r.nfGerada && !r.pago);
+        const valorNFNaoPago = registrosComNFNaoPago.reduce((sum, r) => sum + r.valor, 0);
+
+        const registrosPagos = this.registros.filter(r => r.pago);
+        const valorPagos = registrosPagos.reduce((sum, r) => sum + r.valor, 0);
+
+        document.getElementById('valorSemNF').textContent = this.formatarMoeda(valorSemNF);
+        document.getElementById('valorNFNaoPago').textContent = this.formatarMoeda(valorNFNaoPago);
+        document.getElementById('valorPagos').textContent = this.formatarMoeda(valorPagos);
+
+        // Valores a Pagar por Colaborador
+        const prestadores = ['Emerson', 'Felipe', 'Thiago Martins', 'Carlos'];
+        prestadores.forEach(prestador => {
+            const nomeSemEspaco = prestador.replace(' ', '');
+
+            // Sem NF
+            const semNF = this.registros.filter(r => r.prestador === prestador && !r.nfGerada && !r.pago)
+                .reduce((sum, r) => sum + r.valor, 0);
+
+            // Com NF mas não pago
+            const comNF = this.registros.filter(r => r.prestador === prestador && r.nfGerada && !r.pago)
+                .reduce((sum, r) => sum + r.valor, 0);
+
+            // Total a pagar
+            const totalAPagar = semNF + comNF;
+
+            const prefixo = prestador === 'Emerson' ? 'emerson' :
+                           prestador === 'Felipe' ? 'felipe' :
+                           prestador === 'Thiago Martins' ? 'thiagoMartins' :
+                           'carlos';
+
+            document.getElementById(`${prefixo}SemNF`).textContent = this.formatarMoeda(semNF);
+            document.getElementById(`${prefixo}ComNF`).textContent = this.formatarMoeda(comNF);
+            document.getElementById(`${prefixo}APagar`).textContent = this.formatarMoeda(totalAPagar);
+        });
 
         // Atualizar gráficos
         this.atualizarGraficos();
@@ -913,6 +965,207 @@ class SistemaMonitoramento {
         document.body.removeChild(link);
     }
 
+    gerarDescricaoNF() {
+        const registrosFiltrados = this.obterRegistrosFiltrados();
+
+        if (registrosFiltrados.length === 0) {
+            alert('Não há registros para gerar descrição.\n\nDica: Use os filtros para selecionar apenas os registros de uma NF específica.');
+            return;
+        }
+
+        // Filtrar apenas registros NÃO PAGOS
+        const registrosNaoPagos = registrosFiltrados.filter(r => !r.pago);
+
+        if (registrosNaoPagos.length === 0) {
+            alert('Todos os registros filtrados já foram pagos!\n\nNão há nada para gerar na descrição da NF.');
+            return;
+        }
+
+        // Verificar se há registros pagos misturados
+        const registrosPagos = registrosFiltrados.filter(r => r.pago);
+        if (registrosPagos.length > 0) {
+            const totalPago = registrosPagos.reduce((sum, r) => sum + r.valor, 0);
+            alert(
+                `ATENÇÃO: Foram encontrados ${registrosPagos.length} registro(s) já PAGOS nos filtros aplicados.\n\n` +
+                `Valor pago: ${this.formatarMoeda(totalPago)}\n\n` +
+                `Estes registros serão EXCLUÍDOS da descrição da NF.\n` +
+                `Apenas registros não pagos serão incluídos.`
+            );
+        }
+
+        // Verificar se há NFs diferentes misturadas
+        const nfsDistintas = new Set(registrosNaoPagos.filter(r => r.nfGerada).map(r => r.numeroNF));
+        if (nfsDistintas.size > 1) {
+            const confirmacao = confirm(
+                `ATENÇÃO: Os registros filtrados contêm ${nfsDistintas.size} NFs diferentes:\n` +
+                Array.from(nfsDistintas).join(', ') + '\n\n' +
+                'Deseja continuar mesmo assim?'
+            );
+            if (!confirmacao) return;
+        }
+
+        // Ordenar por data
+        registrosNaoPagos.sort((a, b) => new Date(a.data) - new Date(b.data));
+
+        // Calcular totais (apenas não pagos)
+        const totalHoras = registrosNaoPagos.reduce((sum, r) => sum + r.horas, 0);
+        const totalValor = registrosNaoPagos.reduce((sum, r) => sum + r.valor, 0);
+
+        // Pegar prestador (assume que os registros filtrados são do mesmo prestador)
+        const prestador = registrosNaoPagos[0].prestador || 'Emerson';
+        const valorHora = this.valoresPorHora[prestador] || 0;
+
+        // Datas
+        const dataInicio = this.formatarData(registrosNaoPagos[0].data);
+        const dataFim = this.formatarData(registrosNaoPagos[registrosNaoPagos.length - 1].data);
+
+        // Converter total de horas para extenso
+        const horasExtenso = this.numeroParaExtenso(Math.floor(totalHoras));
+        const valorExtenso = this.valorParaExtenso(totalValor);
+
+        // Agrupar descrições por projeto/cliente (APENAS NÃO PAGOS)
+        const descricoesPorProjeto = {};
+        registrosNaoPagos.forEach(r => {
+            const projeto = r.cliente || 'Serviços Gerais';
+            if (!descricoesPorProjeto[projeto]) {
+                descricoesPorProjeto[projeto] = {
+                    descricoes: [],
+                    horas: 0,
+                    valor: 0
+                };
+            }
+
+            // Somar horas e valores por projeto
+            descricoesPorProjeto[projeto].horas += r.horas;
+            descricoesPorProjeto[projeto].valor += r.valor;
+
+            if (r.descricao) {
+                // Dividir a descrição em linhas e adicionar
+                const linhas = r.descricao.split('\n').filter(l => l.trim());
+                linhas.forEach(linha => {
+                    const linhaLimpa = linha.trim();
+                    // Remover bullet points existentes para normalizar
+                    const linhaSemBullet = linhaLimpa.replace(/^[•\-]\s*/, '');
+                    if (!descricoesPorProjeto[projeto].descricoes.includes(linhaSemBullet)) {
+                        descricoesPorProjeto[projeto].descricoes.push(linhaSemBullet);
+                    }
+                });
+            }
+        });
+
+        // Montar a descrição formatada
+        let descricao = `DADOS BANCÁRIOS:
+BANCO: SANTANDER
+AGÊNCIA: 2990
+CONTA: 15065217-9
+CHAVE PIX: 61.505.146/0001-83
+
+PRESTAÇÃO DE SERVIÇOS TÉCNICOS ESPECIALIZADOS EM TECNOLOGIA DA INFORMAÇÃO
+
+Beneficiário: HAB
+Período de competência: ${dataInicio} a ${dataFim}
+Total de horas trabalhadas: ${totalHoras.toFixed(0)} (${horasExtenso}) horas
+Valor hora técnica: R$ ${valorHora.toFixed(2)}
+
+DISCRIMINAÇÃO DOS SERVIÇOS EXECUTADOS:
+
+`;
+
+        // Adicionar descrições por projeto
+        for (const [projeto, dados] of Object.entries(descricoesPorProjeto)) {
+            descricao += `${projeto}:\n`;
+            dados.descricoes.forEach(desc => {
+                descricao += `• ${desc}\n`;
+            });
+            descricao += '\n';
+        }
+
+        descricao += `VALOR TOTAL DOS SERVIÇOS: R$ ${totalValor.toFixed(2)} (${valorExtenso})`;
+
+        // Mostrar em modal
+        const modal = document.getElementById('modalRelatorio');
+        const conteudo = document.getElementById('conteudoRelatorio');
+
+        conteudo.innerHTML = `
+            <div style="background: white; padding: 20px;">
+                <h3 style="margin-bottom: 20px;">Descrição para Nota Fiscal</h3>
+                <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #3b82f6;">
+                    <p style="margin: 5px 0;"><strong>Registros incluídos:</strong> ${registrosNaoPagos.length}</p>
+                    <p style="margin: 5px 0;"><strong>Total de horas:</strong> ${totalHoras.toFixed(1)}h</p>
+                    <p style="margin: 5px 0;"><strong>Valor total:</strong> ${this.formatarMoeda(totalValor)}</p>
+                    ${registrosPagos.length > 0 ? `<p style="margin: 5px 0; color: #059669;"><strong>Registros pagos excluídos:</strong> ${registrosPagos.length}</p>` : ''}
+                </div>
+                <textarea id="descricaoNFText" readonly style="width: 100%; height: 450px; font-family: monospace; font-size: 12px; padding: 15px; border: 1px solid #ddd; border-radius: 5px;">${descricao}</textarea>
+                <button id="copiarDescricao" class="btn btn-success" style="margin-top: 15px;">Copiar Descrição</button>
+            </div>
+        `;
+
+        modal.style.display = 'block';
+
+        // Adicionar evento de copiar
+        setTimeout(() => {
+            document.getElementById('copiarDescricao').addEventListener('click', () => {
+                const textarea = document.getElementById('descricaoNFText');
+                textarea.select();
+                document.execCommand('copy');
+                alert('Descrição copiada para a área de transferência!');
+            });
+        }, 100);
+    }
+
+    numeroParaExtenso(numero) {
+        const unidades = ['zero', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove'];
+        const dezenas = ['', '', 'vinte', 'trinta', 'quarenta', 'cinquenta', 'sessenta', 'setenta', 'oitenta', 'noventa'];
+        const especiais = ['dez', 'onze', 'doze', 'treze', 'quatorze', 'quinze', 'dezesseis', 'dezessete', 'dezoito', 'dezenove'];
+        const centenas = ['', 'cento', 'duzentos', 'trezentos', 'quatrocentos', 'quinhentos', 'seiscentos', 'setecentos', 'oitocentos', 'novecentos'];
+
+        if (numero === 0) return 'zero';
+        if (numero < 10) return unidades[numero];
+        if (numero < 20) return especiais[numero - 10];
+        if (numero < 100) {
+            const dez = Math.floor(numero / 10);
+            const uni = numero % 10;
+            return dezenas[dez] + (uni > 0 ? ' e ' + unidades[uni] : '');
+        }
+        if (numero === 100) return 'cem';
+        if (numero < 1000) {
+            const cent = Math.floor(numero / 100);
+            const resto = numero % 100;
+            return centenas[cent] + (resto > 0 ? ' e ' + this.numeroParaExtenso(resto) : '');
+        }
+        return numero.toString();
+    }
+
+    valorParaExtenso(valor) {
+        const partes = valor.toFixed(2).split('.');
+        const reais = parseInt(partes[0]);
+        const centavos = parseInt(partes[1]);
+
+        let extenso = '';
+
+        if (reais === 0) {
+            extenso = 'zero reais';
+        } else if (reais === 1) {
+            extenso = 'um real';
+        } else if (reais < 1000) {
+            extenso = this.numeroParaExtenso(reais) + ' reais';
+        } else {
+            const mil = Math.floor(reais / 1000);
+            const resto = reais % 1000;
+            extenso = this.numeroParaExtenso(mil) + ' mil';
+            if (resto > 0) {
+                extenso += ' e ' + this.numeroParaExtenso(resto);
+            }
+            extenso += ' reais';
+        }
+
+        if (centavos > 0) {
+            extenso += ' e ' + this.numeroParaExtenso(centavos) + ' centavos';
+        }
+
+        return extenso;
+    }
+
     exportarJSON() {
         const dados = {
             valoresPorHora: this.valoresPorHora,
@@ -1033,6 +1286,9 @@ class SistemaMonitoramento {
         this.criarGraficoHorasDia();
         this.criarGraficoComparacao();
         this.criarGraficoEvolucao();
+        this.criarGraficoStatusPagamento();
+        this.criarGraficoValoresPorColaborador();
+        this.criarGraficoDetalhamentoPorColaborador();
     }
 
     criarGraficoHorasDia() {
@@ -1050,7 +1306,7 @@ class SistemaMonitoramento {
         // Agrupar horas por dia e prestador
         const horasPorDia = {};
         ultimos30Dias.forEach(data => {
-            horasPorDia[data] = { Emerson: 0, Felipe: 0, 'Thiago Martins': 0 };
+            horasPorDia[data] = { Emerson: 0, Felipe: 0, 'Thiago Martins': 0, Carlos: 0 };
         });
 
         registrosFiltrados.forEach(registro => {
@@ -1068,6 +1324,7 @@ class SistemaMonitoramento {
         const datasetsEmerson = ultimos30Dias.map(data => horasPorDia[data].Emerson);
         const datasetsFelipe = ultimos30Dias.map(data => horasPorDia[data].Felipe);
         const datasetsThiagoMartins = ultimos30Dias.map(data => horasPorDia[data]['Thiago Martins']);
+        const datasetsCarlos = ultimos30Dias.map(data => horasPorDia[data].Carlos);
 
         // Destruir gráfico anterior se existir
         if (this.graficoHorasDia) {
@@ -1101,6 +1358,14 @@ class SistemaMonitoramento {
                         data: datasetsThiagoMartins,
                         borderColor: '#f59e0b',
                         backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Carlos',
+                        data: datasetsCarlos,
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
                         tension: 0.4,
                         fill: true
                     }
@@ -1151,6 +1416,10 @@ class SistemaMonitoramento {
             .filter(r => r.prestador === 'Thiago Martins')
             .reduce((sum, r) => sum + r.horas, 0);
 
+        const horasCarlos = registrosFiltrados
+            .filter(r => r.prestador === 'Carlos')
+            .reduce((sum, r) => sum + r.horas, 0);
+
         // Destruir gráfico anterior se existir
         if (this.graficoComparacao) {
             this.graficoComparacao.destroy();
@@ -1160,10 +1429,10 @@ class SistemaMonitoramento {
         this.graficoComparacao = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: ['Emerson', 'Felipe', 'Thiago Martins'],
+                labels: ['Emerson', 'Felipe', 'Thiago Martins', 'Carlos'],
                 datasets: [{
-                    data: [horasEmerson, horasFelipe, horasThiagoMartins],
-                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'],
+                    data: [horasEmerson, horasFelipe, horasThiagoMartins, horasCarlos],
+                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'],
                     borderWidth: 2,
                     borderColor: '#fff'
                 }]
@@ -1199,7 +1468,7 @@ class SistemaMonitoramento {
             const mesAno = `${data.getMonth() + 1}/${data.getFullYear()}`;
 
             if (!porMes[mesAno]) {
-                porMes[mesAno] = { Emerson: 0, Felipe: 0, 'Thiago Martins': 0 };
+                porMes[mesAno] = { Emerson: 0, Felipe: 0, 'Thiago Martins': 0, Carlos: 0 };
             }
 
             const prestador = registro.prestador || 'Emerson';
@@ -1217,6 +1486,7 @@ class SistemaMonitoramento {
         const valoresEmerson = mesesOrdenados.map(mes => porMes[mes].Emerson);
         const valoresFelipe = mesesOrdenados.map(mes => porMes[mes].Felipe);
         const valoresThiagoMartins = mesesOrdenados.map(mes => porMes[mes]['Thiago Martins']);
+        const valoresCarlos = mesesOrdenados.map(mes => porMes[mes].Carlos);
 
         // Destruir gráfico anterior se existir
         if (this.graficoEvolucao) {
@@ -1249,6 +1519,13 @@ class SistemaMonitoramento {
                         backgroundColor: '#f59e0b',
                         borderColor: '#d97706',
                         borderWidth: 1
+                    },
+                    {
+                        label: 'Carlos',
+                        data: valoresCarlos,
+                        backgroundColor: '#8b5cf6',
+                        borderColor: '#7c3aed',
+                        borderWidth: 1
                     }
                 ]
             },
@@ -1269,6 +1546,194 @@ class SistemaMonitoramento {
                 },
                 scales: {
                     y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'R$ ' + value.toFixed(0);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    criarGraficoStatusPagamento() {
+        // Totais por status de pagamento
+        const registrosSemNF = this.registros.filter(r => !r.nfGerada && !r.pago);
+        const valorSemNF = registrosSemNF.reduce((sum, r) => sum + r.valor, 0);
+
+        const registrosComNFNaoPago = this.registros.filter(r => r.nfGerada && !r.pago);
+        const valorNFNaoPago = registrosComNFNaoPago.reduce((sum, r) => sum + r.valor, 0);
+
+        const registrosPagos = this.registros.filter(r => r.pago);
+        const valorPagos = registrosPagos.reduce((sum, r) => sum + r.valor, 0);
+
+        // Destruir gráfico anterior se existir
+        if (this.graficoStatusPagamento) {
+            this.graficoStatusPagamento.destroy();
+        }
+
+        const ctx = document.getElementById('graficoStatusPagamento');
+        this.graficoStatusPagamento = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Sem NF', 'Com NF (Não Pago)', 'Pagos'],
+                datasets: [{
+                    data: [valorSemNF, valorNFNaoPago, valorPagos],
+                    backgroundColor: ['#ef4444', '#f59e0b', '#10b981'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const valor = context.parsed;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? ((valor / total) * 100).toFixed(1) : 0;
+                                return `${context.label}: R$ ${valor.toFixed(2)} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    criarGraficoValoresPorColaborador() {
+        const prestadores = ['Emerson', 'Felipe', 'Thiago Martins', 'Carlos'];
+        const valoresAPagar = [];
+
+        prestadores.forEach(prestador => {
+            // Soma dos valores sem NF + com NF não pago
+            const valor = this.registros
+                .filter(r => r.prestador === prestador && !r.pago)
+                .reduce((sum, r) => sum + r.valor, 0);
+            valoresAPagar.push(valor);
+        });
+
+        // Destruir gráfico anterior se existir
+        if (this.graficoValoresPorColaborador) {
+            this.graficoValoresPorColaborador.destroy();
+        }
+
+        const ctx = document.getElementById('graficoValoresPorColaborador');
+        this.graficoValoresPorColaborador = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: prestadores,
+                datasets: [{
+                    label: 'Total a Pagar',
+                    data: valoresAPagar,
+                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'],
+                    borderColor: ['#2563eb', '#059669', '#d97706', '#7c3aed'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `A Pagar: R$ ${context.parsed.y.toFixed(2)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'R$ ' + value.toFixed(0);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    criarGraficoDetalhamentoPorColaborador() {
+        const prestadores = ['Emerson', 'Felipe', 'Thiago Martins', 'Carlos'];
+        const valoresSemNF = [];
+        const valoresComNF = [];
+
+        prestadores.forEach(prestador => {
+            // Sem NF
+            const semNF = this.registros
+                .filter(r => r.prestador === prestador && !r.nfGerada && !r.pago)
+                .reduce((sum, r) => sum + r.valor, 0);
+            valoresSemNF.push(semNF);
+
+            // Com NF mas não pago
+            const comNF = this.registros
+                .filter(r => r.prestador === prestador && r.nfGerada && !r.pago)
+                .reduce((sum, r) => sum + r.valor, 0);
+            valoresComNF.push(comNF);
+        });
+
+        // Destruir gráfico anterior se existir
+        if (this.graficoDetalhamentoPorColaborador) {
+            this.graficoDetalhamentoPorColaborador.destroy();
+        }
+
+        const ctx = document.getElementById('graficoDetalhamentoPorColaborador');
+        this.graficoDetalhamentoPorColaborador = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: prestadores,
+                datasets: [
+                    {
+                        label: 'Sem NF',
+                        data: valoresSemNF,
+                        backgroundColor: '#ef4444',
+                        borderColor: '#dc2626',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Com NF (Não Pago)',
+                        data: valoresComNF,
+                        backgroundColor: '#f59e0b',
+                        borderColor: '#d97706',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: R$ ${context.parsed.y.toFixed(2)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true
+                    },
+                    y: {
+                        stacked: true,
                         beginAtZero: true,
                         ticks: {
                             callback: function(value) {
@@ -1336,6 +1801,9 @@ class SistemaMonitoramento {
                 // Garantir que todos os prestadores existem
                 if (!this.valoresPorHora['Thiago Martins']) {
                     this.valoresPorHora['Thiago Martins'] = 0;
+                }
+                if (!this.valoresPorHora['Carlos']) {
+                    this.valoresPorHora['Carlos'] = 0;
                 }
             }
 

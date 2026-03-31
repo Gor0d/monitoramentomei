@@ -22,6 +22,7 @@
                     <option value="Emerson">Emerson</option>
                     <option value="Felipe">Felipe</option>
                     <option value="Thiago Martins">Thiago Martins</option>
+                    <option value="Carlos">Carlos</option>
                 </select>
             </div>
             <div class="form-group">
@@ -43,6 +44,7 @@
                         <option value="Emerson">Emerson</option>
                         <option value="Felipe">Felipe</option>
                         <option value="Thiago Martins">Thiago Martins</option>
+                        <option value="Carlos">Carlos</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -110,6 +112,19 @@
                         </div>
                     </div>
                 </div>
+                <div class="prestador-card">
+                    <h3>📊 Carlos</h3>
+                    <div class="prestador-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Horas:</span>
+                            <span class="stat-valor" id="horasCarlos">0h</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Valor:</span>
+                            <span class="stat-valor destaque" id="valorCarlos">R$ 0,00</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Total Geral -->
@@ -156,6 +171,103 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Valores Detalhados por Status de Pagamento -->
+            <div style="margin-top: 30px;">
+                <h3 style="margin-bottom: 15px;">💰 Resumo Financeiro Detalhado</h3>
+                <div class="cards-resumo" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                    <div class="card" style="background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border-left: 4px solid #ef4444;">
+                        <h3 style="color: #991b1b; font-size: 0.95em;">🔴 Sem NF</h3>
+                        <p style="font-size: 0.8em; color: #7f1d1d; margin: 5px 0;">Aguardando emissão</p>
+                        <p style="font-size: 1.3em; font-weight: bold; color: #991b1b;" id="valorSemNF">R$ 0,00</p>
+                    </div>
+                    <div class="card" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b;">
+                        <h3 style="color: #92400e; font-size: 0.95em;">🟡 Com NF (Não Pago)</h3>
+                        <p style="font-size: 0.8em; color: #78350f; margin: 5px 0;">Aguardando pagamento</p>
+                        <p style="font-size: 1.3em; font-weight: bold; color: #92400e;" id="valorNFNaoPago">R$ 0,00</p>
+                    </div>
+                    <div class="card" style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border-left: 4px solid #10b981;">
+                        <h3 style="color: #065f46; font-size: 0.95em;">🟢 Pagos</h3>
+                        <p style="font-size: 0.8em; color: #064e3b; margin: 5px 0;">Recebidos</p>
+                        <p style="font-size: 1.3em; font-weight: bold; color: #065f46;" id="valorPagos">R$ 0,00</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Valores a Pagar por Colaborador -->
+            <div style="margin-top: 30px;">
+                <h3 style="margin-bottom: 15px;">👥 Valores a Pagar por Colaborador (Não Pagos)</h3>
+                <div class="prestadores-resumo">
+                    <div class="prestador-card" style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);">
+                        <h3>💵 Emerson</h3>
+                        <div class="prestador-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Sem NF:</span>
+                                <span class="stat-valor" style="color: #ef4444;" id="emersonSemNF">R$ 0,00</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Com NF:</span>
+                                <span class="stat-valor" style="color: #f59e0b;" id="emersonComNF">R$ 0,00</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Total a Pagar:</span>
+                                <span class="stat-valor destaque" id="emersonAPagar">R$ 0,00</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="prestador-card" style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);">
+                        <h3>💵 Felipe</h3>
+                        <div class="prestador-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Sem NF:</span>
+                                <span class="stat-valor" style="color: #ef4444;" id="felipeSemNF">R$ 0,00</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Com NF:</span>
+                                <span class="stat-valor" style="color: #f59e0b;" id="felipeComNF">R$ 0,00</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Total a Pagar:</span>
+                                <span class="stat-valor destaque" id="felipeAPagar">R$ 0,00</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="prestador-card" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);">
+                        <h3>💵 Thiago Martins</h3>
+                        <div class="prestador-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Sem NF:</span>
+                                <span class="stat-valor" style="color: #ef4444;" id="thiagoMartinsSemNF">R$ 0,00</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Com NF:</span>
+                                <span class="stat-valor" style="color: #f59e0b;" id="thiagoMartinsComNF">R$ 0,00</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Total a Pagar:</span>
+                                <span class="stat-valor destaque" id="thiagoMartinsAPagar">R$ 0,00</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="prestador-card" style="background: linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 100%);">
+                        <h3>💵 Carlos</h3>
+                        <div class="prestador-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Sem NF:</span>
+                                <span class="stat-valor" style="color: #ef4444;" id="carlosSemNF">R$ 0,00</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Com NF:</span>
+                                <span class="stat-valor" style="color: #f59e0b;" id="carlosComNF">R$ 0,00</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Total a Pagar:</span>
+                                <span class="stat-valor destaque" id="carlosAPagar">R$ 0,00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Dashboard de Gráficos -->
@@ -180,6 +292,28 @@
                     <canvas id="graficoEvolucao"></canvas>
                 </div>
             </div>
+
+            <!-- Gráficos Financeiros -->
+            <h2 style="margin-top: 40px;">Dashboard Financeiro</h2>
+
+            <div class="graficos-container">
+                <div class="grafico-box">
+                    <h3>Status de Pagamento (Valores)</h3>
+                    <canvas id="graficoStatusPagamento"></canvas>
+                </div>
+
+                <div class="grafico-box">
+                    <h3>Valores a Pagar por Colaborador</h3>
+                    <canvas id="graficoValoresPorColaborador"></canvas>
+                </div>
+            </div>
+
+            <div class="graficos-container">
+                <div class="grafico-box grafico-wide">
+                    <h3>Detalhamento por Colaborador (Sem NF vs Com NF não pago)</h3>
+                    <canvas id="graficoDetalhamentoPorColaborador"></canvas>
+                </div>
+            </div>
         </div>
 
         <div class="filtros-section">
@@ -192,6 +326,7 @@
                         <option value="Emerson">Emerson</option>
                         <option value="Felipe">Felipe</option>
                         <option value="Thiago Martins">Thiago Martins</option>
+                        <option value="Carlos">Carlos</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -230,6 +365,7 @@
             <div class="acoes-registros">
                 <button id="gerarRelatorio" class="btn btn-info">Gerar Relatório</button>
                 <button id="exportarDados" class="btn btn-info">Exportar para CSV</button>
+                <button id="gerarDescricaoNF" class="btn btn-info">Gerar Descrição para NF</button>
             </div>
 
             <!-- Controles de Seleção em Lote -->
@@ -313,6 +449,7 @@
                             <option value="Emerson">Emerson</option>
                             <option value="Felipe">Felipe</option>
                             <option value="Thiago Martins">Thiago Martins</option>
+                            <option value="Carlos">Carlos</option>
                         </select>
                     </div>
 
